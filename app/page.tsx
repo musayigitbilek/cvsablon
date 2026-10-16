@@ -32,7 +32,7 @@ interface EducationItem {
 }
 
 interface SectionOrder {
-  id: string; // 'summary' | 'skills' | 'experiences' | 'educations' | veya customSection id'si
+  id: string; // 'summary' | 'skills' | 'experiences' | 'educations' | customSection id
   type: "summary" | "skills" | "experiences" | "educations" | "custom";
 }
 
@@ -154,7 +154,7 @@ export default function Home() {
     localStorage.setItem("cvData", JSON.stringify(updated));
   };
 
-  // Sıralama Değiştirici (Bölüm Kartlarının Yanındaki Oklar)
+  // Bölüm Sıralama Okları (Senkron Çalışır)
   const moveSection = (sectionId: string, direction: "up" | "down") => {
     const orders = [...cvData.sectionOrders];
     const index = orders.findIndex((s) => s.id === sectionId);
@@ -171,7 +171,7 @@ export default function Home() {
     localStorage.setItem("cvData", JSON.stringify(updated));
   };
 
-  // Özel Bölüm Ekleme (Sertifikalar, Diller vs.)
+  // Özel Bölüm Ekleme
   const addCustomSection = () => {
     const newId = "custom_" + Date.now();
     const newSection: CustomSection = {
@@ -203,7 +203,6 @@ export default function Home() {
     localStorage.setItem("cvData", JSON.stringify(updated));
   };
 
-  // Özel Bölüm Silme
   const removeCustomSection = (sectionId: string) => {
     const updatedCustoms = cvData.customSections.filter((s) => s.id !== sectionId);
     const updatedOrders = cvData.sectionOrders.filter((s) => s.id !== sectionId);
@@ -217,7 +216,6 @@ export default function Home() {
     localStorage.setItem("cvData", JSON.stringify(updated));
   };
 
-  // Özel Bölüm Başlığı Değiştirme
   const handleCustomSectionTitleChange = (sectionId: string, title: string) => {
     const updatedCustoms = cvData.customSections.map((s) =>
       s.id === sectionId ? { ...s, sectionTitle: title } : s
@@ -227,7 +225,6 @@ export default function Home() {
     localStorage.setItem("cvData", JSON.stringify(updated));
   };
 
-  // Özel Bölüme Madde Ekleme
   const addCustomItem = (sectionId: string) => {
     const newItem: CustomSectionItem = {
       id: Date.now().toString(),
@@ -246,7 +243,6 @@ export default function Home() {
     localStorage.setItem("cvData", JSON.stringify(updated));
   };
 
-  // Özel Bölüm Maddesini Silme
   const removeCustomItem = (sectionId: string, itemId: string) => {
     const updatedCustoms = cvData.customSections.map((s) =>
       s.id === sectionId
@@ -259,7 +255,6 @@ export default function Home() {
     localStorage.setItem("cvData", JSON.stringify(updated));
   };
 
-  // Özel Bölüm Madde Değişikliği
   const handleCustomItemChange = (
     sectionId: string,
     itemId: string,
@@ -281,7 +276,7 @@ export default function Home() {
     localStorage.setItem("cvData", JSON.stringify(updated));
   };
 
-  // Profil Fotoğrafı Yükleme
+  // Fotoğraf Kontrolleri
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -387,12 +382,279 @@ export default function Home() {
     }, 200);
   };
 
-  // Dinamik A4 Bölüm Renderlayıcı
+  // Başlık Yanı Ok Butonları
+  const SectionHeaderControls = ({ sectionId }: { sectionId: string }) => {
+    const orders = cvData.sectionOrders;
+    const index = orders.findIndex((s) => s.id === sectionId);
+
+    return (
+      <div className="flex items-center gap-1">
+        <button
+          type="button"
+          disabled={index <= 0}
+          onClick={() => moveSection(sectionId, "up")}
+          className="p-1 text-[10px] bg-slate-100 hover:bg-slate-200 rounded text-slate-600 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+          title="Yukarı Taşı"
+        >
+          ▲
+        </button>
+        <button
+          type="button"
+          disabled={index === -1 || index >= orders.length - 1}
+          onClick={() => moveSection(sectionId, "down")}
+          className="p-1 text-[10px] bg-slate-100 hover:bg-slate-200 rounded text-slate-600 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+          title="Aşağı Taşı"
+        >
+          ▼
+        </button>
+      </div>
+    );
+  };
+
+  // 1️⃣ SOL FORM DİNAMİK RENDER SİSTEMİ (SENKRONİZE)
+  const renderFormSection = (order: SectionOrder) => {
+    switch (order.type) {
+      case "summary":
+        return (
+          <div key="form_summary" className="p-4 border border-slate-200 rounded-xl bg-slate-50 space-y-2">
+            <div className="flex justify-between items-center pb-2 border-b">
+              <label className="block text-sm font-bold text-slate-800">Profil Özeti (Hakkımda)</label>
+              <SectionHeaderControls sectionId="summary" />
+            </div>
+            <textarea
+              name="summary"
+              rows={3}
+              value={cvData.summary}
+              onChange={handleChange}
+              className="w-full border border-slate-300 p-2.5 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white"
+            />
+          </div>
+        );
+
+      case "skills":
+        return (
+          <div key="form_skills" className="p-4 border border-slate-200 rounded-xl bg-slate-50 space-y-2">
+            <div className="flex justify-between items-center pb-2 border-b">
+              <label className="block text-sm font-bold text-slate-800">Beceriler (Virgülle ayırın)</label>
+              <SectionHeaderControls sectionId="skills" />
+            </div>
+            <input
+              type="text"
+              name="skills"
+              value={cvData.skills}
+              onChange={handleChange}
+              className="w-full border border-slate-300 p-2.5 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white"
+            />
+          </div>
+        );
+
+      case "experiences":
+        return (
+          <div key="form_experiences" className="p-4 border border-slate-200 rounded-xl bg-slate-50 space-y-4">
+            <div className="flex justify-between items-center pb-2 border-b">
+              <div className="flex items-center gap-2">
+                <h2 className="text-sm font-bold text-slate-800">İş Deneyimi</h2>
+                <SectionHeaderControls sectionId="experiences" />
+              </div>
+              <button
+                onClick={addExperience}
+                className="text-xs bg-blue-50 hover:bg-blue-100 text-blue-600 font-bold px-3 py-1.5 rounded-lg transition-all"
+              >
+                + Deneyim Ekle
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              {cvData.experiences.map((exp) => (
+                <div key={exp.id} className="p-3 border border-slate-200 rounded-lg bg-white relative space-y-3">
+                  <button
+                    onClick={() => removeExperience(exp.id)}
+                    className="absolute top-3 right-3 text-red-500 hover:text-red-700 text-xs font-bold"
+                  >
+                    Sil ✕
+                  </button>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pr-8">
+                    <input
+                      type="text"
+                      placeholder="Şirket Adı"
+                      value={exp.company}
+                      onChange={(e) => handleExpChange(exp.id, "company", e.target.value)}
+                      className="border border-slate-300 p-2 rounded-lg text-xs w-full"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Pozisyon / Unvan"
+                      value={exp.role}
+                      onChange={(e) => handleExpChange(exp.id, "role", e.target.value)}
+                      className="border border-slate-300 p-2 rounded-lg text-xs w-full"
+                    />
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="Tarih / Yıl (Örn: 2020 - 2023)"
+                    value={exp.year}
+                    onChange={(e) => handleExpChange(exp.id, "year", e.target.value)}
+                    className="border border-slate-300 p-2 rounded-lg text-xs w-full"
+                  />
+                  <textarea
+                    placeholder="Açıklama / Sorumluluklar"
+                    rows={2}
+                    value={exp.desc}
+                    onChange={(e) => handleExpChange(exp.id, "desc", e.target.value)}
+                    className="border border-slate-300 p-2 rounded-lg text-xs w-full"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+
+      case "educations":
+        return (
+          <div key="form_educations" className="p-4 border border-slate-200 rounded-xl bg-slate-50 space-y-4">
+            <div className="flex justify-between items-center pb-2 border-b">
+              <div className="flex items-center gap-2">
+                <h2 className="text-sm font-bold text-slate-800">Eğitim</h2>
+                <SectionHeaderControls sectionId="educations" />
+              </div>
+              <button
+                onClick={addEducation}
+                className="text-xs bg-blue-50 hover:bg-blue-100 text-blue-600 font-bold px-3 py-1.5 rounded-lg transition-all"
+              >
+                + Eğitim Ekle
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              {cvData.educations.map((edu) => (
+                <div key={edu.id} className="p-3 border border-slate-200 rounded-lg bg-white relative space-y-3">
+                  <button
+                    onClick={() => removeEducation(edu.id)}
+                    className="absolute top-3 right-3 text-red-500 hover:text-red-700 text-xs font-bold"
+                  >
+                    Sil ✕
+                  </button>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pr-8">
+                    <input
+                      type="text"
+                      placeholder="Okul / Üniversite"
+                      value={edu.school}
+                      onChange={(e) => handleEduChange(edu.id, "school", e.target.value)}
+                      className="border border-slate-300 p-2 rounded-lg text-xs w-full"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Bölüm / Derece"
+                      value={edu.degree}
+                      onChange={(e) => handleEduChange(edu.id, "degree", e.target.value)}
+                      className="border border-slate-300 p-2 rounded-lg text-xs w-full"
+                    />
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="Yıl (Örn: 2017 - 2021)"
+                    value={edu.year}
+                    onChange={(e) => handleEduChange(edu.id, "year", e.target.value)}
+                    className="border border-slate-300 p-2 rounded-lg text-xs w-full"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+
+      case "custom": {
+        const sec = cvData.customSections.find((s) => s.id === order.id);
+        if (!sec) return null;
+
+        return (
+          <div key={sec.id} className="p-4 border border-blue-200 rounded-xl bg-blue-50/30 space-y-4">
+            <div className="flex justify-between items-center pb-2 border-b border-blue-200">
+              <div className="flex items-center gap-2 flex-1 mr-4">
+                <input
+                  type="text"
+                  value={sec.sectionTitle}
+                  onChange={(e) => handleCustomSectionTitleChange(sec.id, e.target.value)}
+                  placeholder="Bölüm Başlığı (Örn: Sertifikalar)"
+                  className="font-bold text-slate-800 bg-white border border-slate-300 px-2 py-1 rounded text-sm w-full focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                />
+                <SectionHeaderControls sectionId={sec.id} />
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => addCustomItem(sec.id)}
+                  className="text-xs bg-blue-600 text-white font-semibold px-2.5 py-1 rounded hover:bg-blue-700 transition-all shrink-0"
+                >
+                  + Madde Ekle
+                </button>
+                <button
+                  onClick={() => removeCustomSection(sec.id)}
+                  className="text-xs text-red-600 font-bold hover:underline shrink-0"
+                >
+                  Sil
+                </button>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              {sec.items.map((item) => (
+                <div key={item.id} className="p-3 bg-white border border-slate-200 rounded-lg relative space-y-2">
+                  <button
+                    onClick={() => removeCustomItem(sec.id, item.id)}
+                    className="absolute top-2 right-2 text-red-500 hover:text-red-700 text-xs font-bold"
+                  >
+                    ✕
+                  </button>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 pr-6">
+                    <input
+                      type="text"
+                      placeholder="Başlık (Örn: İngilizce / AWS Sertifikası)"
+                      value={item.title}
+                      onChange={(e) => handleCustomItemChange(sec.id, item.id, "title", e.target.value)}
+                      className="border border-slate-300 p-1.5 rounded text-xs w-full"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Alt Başlık / Seviye (Örn: C1 / İleri Derece)"
+                      value={item.subtitle}
+                      onChange={(e) => handleCustomItemChange(sec.id, item.id, "subtitle", e.target.value)}
+                      className="border border-slate-300 p-1.5 rounded text-xs w-full"
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    <input
+                      type="text"
+                      placeholder="Tarih / Yıl (İsteğe Bağlı)"
+                      value={item.date}
+                      onChange={(e) => handleCustomItemChange(sec.id, item.id, "date", e.target.value)}
+                      className="border border-slate-300 p-1.5 rounded text-xs w-full"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Kısa Açıklama (İsteğe Bağlı)"
+                      value={item.description}
+                      onChange={(e) => handleCustomItemChange(sec.id, item.id, "description", e.target.value)}
+                      className="border border-slate-300 p-1.5 rounded text-xs w-full"
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      }
+
+      default:
+        return null;
+    }
+  };
+
+  // 2️⃣ SAĞ A4 CANLI DİNAMİK RENDER SİSTEMİ (SENKRONİZE)
   const renderCVSection = (order: SectionOrder) => {
     switch (order.type) {
       case "summary":
         return cvData.summary ? (
-          <div key="summary" className="mb-6">
+          <div key="cv_summary" className="mb-6">
             <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
               Hakkımda
             </h3>
@@ -402,7 +664,7 @@ export default function Home() {
 
       case "skills":
         return cvData.skills ? (
-          <div key="skills" className="mb-6">
+          <div key="cv_skills" className="mb-6">
             <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
               Beceriler
             </h3>
@@ -418,7 +680,7 @@ export default function Home() {
 
       case "experiences":
         return cvData.experiences.length > 0 ? (
-          <div key="experiences" className="mb-6">
+          <div key="cv_experiences" className="mb-6">
             <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">
               İş Deneyimi
             </h3>
@@ -439,7 +701,7 @@ export default function Home() {
 
       case "educations":
         return cvData.educations.length > 0 ? (
-          <div key="educations" className="mb-6">
+          <div key="cv_educations" className="mb-6">
             <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">
               Eğitim
             </h3>
@@ -487,35 +749,6 @@ export default function Home() {
       default:
         return null;
     }
-  };
-
-  // Sol panelde ilgili bölüm kartının sağ üstündeki Oklar
-  const SectionHeaderControls = ({ sectionId }: { sectionId: string }) => {
-    const orders = cvData.sectionOrders;
-    const index = orders.findIndex((s) => s.id === sectionId);
-
-    return (
-      <div className="flex items-center gap-1">
-        <button
-          type="button"
-          disabled={index <= 0}
-          onClick={() => moveSection(sectionId, "up")}
-          className="p-1 text-[10px] bg-slate-100 hover:bg-slate-200 rounded text-slate-600 disabled:opacity-30 disabled:cursor-not-allowed"
-          title="Yukarı Taşı"
-        >
-          ▲
-        </button>
-        <button
-          type="button"
-          disabled={index === -1 || index >= orders.length - 1}
-          onClick={() => moveSection(sectionId, "down")}
-          className="p-1 text-[10px] bg-slate-100 hover:bg-slate-200 rounded text-slate-600 disabled:opacity-30 disabled:cursor-not-allowed"
-          title="Aşağı Taşı"
-        >
-          ▼
-        </button>
-      </div>
-    );
   };
 
   return (
@@ -568,11 +801,11 @@ export default function Home() {
       <main className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-6 p-6 max-w-[1600px] w-full mx-auto print:block print:p-0">
         
         {/* SOL FORM */}
-        <section className="bg-white rounded-xl p-6 shadow-sm border border-slate-200 overflow-y-auto max-h-[calc(100vh-120px)] space-y-8 print:hidden">
+        <section className="bg-white rounded-xl p-6 shadow-sm border border-slate-200 overflow-y-auto max-h-[calc(100vh-120px)] space-y-6 print:hidden">
           
           {/* TEMA RENGİ SEÇİMİ */}
           <div>
-            <h2 className="text-lg font-bold text-slate-800 mb-3 pb-2 border-b flex justify-between items-center">
+            <h2 className="text-sm font-bold text-slate-800 mb-3 pb-2 border-b flex justify-between items-center">
               <span>Şablon Vurgu Rengi</span>
             </h2>
             <div className="flex items-center gap-3">
@@ -580,7 +813,7 @@ export default function Home() {
                 <button
                   key={color.value}
                   onClick={() => handleColorChange(color.value)}
-                  className={`w-9 h-9 rounded-full ${color.bg} flex items-center justify-center transition-all ${
+                  className={`w-8 h-8 rounded-full ${color.bg} flex items-center justify-center transition-all ${
                     cvData.accentColor === color.value
                       ? "ring-4 ring-slate-300 scale-110 shadow-md"
                       : "opacity-80 hover:opacity-100"
@@ -596,16 +829,16 @@ export default function Home() {
           </div>
 
           {/* Kişisel Bilgiler & Fotoğraf */}
-          <div>
-            <h2 className="text-lg font-bold text-slate-800 mb-4 pb-2 border-b">
+          <div className="p-4 border border-slate-200 rounded-xl bg-slate-50 space-y-4">
+            <h2 className="text-sm font-bold text-slate-800 pb-2 border-b">
               Kişisel Bilgiler
             </h2>
 
             {/* Profil Fotoğrafı Alanı */}
-            <div className="mb-6 p-4 border border-dashed border-slate-300 rounded-xl bg-slate-50 space-y-4">
+            <div className="p-3 border border-dashed border-slate-300 rounded-xl bg-white space-y-3">
               <div className="flex items-center gap-4">
                 {cvData.photo ? (
-                  <div className="relative w-20 h-20 rounded-full overflow-hidden border-2 shrink-0 bg-slate-200" style={{ borderColor: cvData.accentColor }}>
+                  <div className="relative w-16 h-16 rounded-full overflow-hidden border-2 shrink-0 bg-slate-200" style={{ borderColor: cvData.accentColor }}>
                     <img
                       src={cvData.photo}
                       alt="Profil"
@@ -617,7 +850,7 @@ export default function Home() {
                     />
                   </div>
                 ) : (
-                  <div className="w-20 h-20 rounded-full bg-slate-200 border-2 border-dashed border-slate-300 flex items-center justify-center text-slate-400 text-2xl shrink-0">
+                  <div className="w-16 h-16 rounded-full bg-slate-200 border-2 border-dashed border-slate-300 flex items-center justify-center text-slate-400 text-xl shrink-0">
                     📷
                   </div>
                 )}
@@ -630,7 +863,7 @@ export default function Home() {
                       type="file"
                       accept="image/*"
                       onChange={handlePhotoUpload}
-                      className="block w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
+                      className="block w-full text-xs text-slate-500 file:mr-3 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
                     />
                     {cvData.photo && (
                       <button
@@ -646,10 +879,10 @@ export default function Home() {
 
               {/* Fotoğraf Hizalama Çubukları */}
               {cvData.photo && (
-                <div className="pt-3 border-t border-slate-200 grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div className="pt-2 border-t border-slate-200 grid grid-cols-1 md:grid-cols-3 gap-3">
                   <div>
-                    <div className="flex justify-between text-[11px] font-semibold text-slate-600 mb-1">
-                      <span>Dikey Odak (Yükseklik)</span>
+                    <div className="flex justify-between text-[10px] font-semibold text-slate-600 mb-1">
+                      <span>Dikey Odak</span>
                       <span>%{cvData.photoY}</span>
                     </div>
                     <input
@@ -658,13 +891,13 @@ export default function Home() {
                       max="100"
                       value={cvData.photoY}
                       onChange={(e) => handlePhotoAdjust("photoY", Number(e.target.value))}
-                      className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                      className="w-full h-1 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
                     />
                   </div>
 
                   <div>
-                    <div className="flex justify-between text-[11px] font-semibold text-slate-600 mb-1">
-                      <span>Yatay Odak (Sağ/Sol)</span>
+                    <div className="flex justify-between text-[10px] font-semibold text-slate-600 mb-1">
+                      <span>Yatay Odak</span>
                       <span>%{cvData.photoX}</span>
                     </div>
                     <input
@@ -673,12 +906,12 @@ export default function Home() {
                       max="100"
                       value={cvData.photoX}
                       onChange={(e) => handlePhotoAdjust("photoX", Number(e.target.value))}
-                      className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                      className="w-full h-1 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
                     />
                   </div>
 
                   <div>
-                    <div className="flex justify-between text-[11px] font-semibold text-slate-600 mb-1">
+                    <div className="flex justify-between text-[10px] font-semibold text-slate-600 mb-1">
                       <span>Boyut (Zoom)</span>
                       <span>%{cvData.photoZoom}</span>
                     </div>
@@ -688,15 +921,15 @@ export default function Home() {
                       max="200"
                       value={cvData.photoZoom}
                       onChange={(e) => handlePhotoAdjust("photoZoom", Number(e.target.value))}
-                      className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                      className="w-full h-1 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
                     />
                   </div>
                 </div>
               )}
             </div>
 
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-slate-600 mb-1">Ad Soyad</label>
                   <input
@@ -704,7 +937,7 @@ export default function Home() {
                     name="fullName"
                     value={cvData.fullName}
                     onChange={handleChange}
-                    className="w-full border border-slate-300 p-2.5 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    className="w-full border border-slate-300 p-2 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white"
                   />
                 </div>
                 <div>
@@ -714,12 +947,12 @@ export default function Home() {
                     name="title"
                     value={cvData.title}
                     onChange={handleChange}
-                    className="w-full border border-slate-300 p-2.5 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    className="w-full border border-slate-300 p-2 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white"
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-slate-600 mb-1">E-posta</label>
                   <input
@@ -727,7 +960,7 @@ export default function Home() {
                     name="email"
                     value={cvData.email}
                     onChange={handleChange}
-                    className="w-full border border-slate-300 p-2.5 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    className="w-full border border-slate-300 p-2 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white"
                   />
                 </div>
                 <div>
@@ -737,7 +970,7 @@ export default function Home() {
                     name="phone"
                     value={cvData.phone}
                     onChange={handleChange}
-                    className="w-full border border-slate-300 p-2.5 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    className="w-full border border-slate-300 p-2 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white"
                   />
                 </div>
                 <div>
@@ -747,231 +980,15 @@ export default function Home() {
                     name="location"
                     value={cvData.location}
                     onChange={handleChange}
-                    className="w-full border border-slate-300 p-2.5 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    className="w-full border border-slate-300 p-2 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white"
                   />
                 </div>
-              </div>
-
-              {/* Hakkımda */}
-              <div className="pt-2">
-                <div className="flex justify-between items-center mb-1">
-                  <label className="block text-xs font-semibold text-slate-600">Profil Özeti (Hakkımda)</label>
-                  <SectionHeaderControls sectionId="summary" />
-                </div>
-                <textarea
-                  name="summary"
-                  rows={3}
-                  value={cvData.summary}
-                  onChange={handleChange}
-                  className="w-full border border-slate-300 p-2.5 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                />
-              </div>
-
-              {/* Beceriler */}
-              <div className="pt-2">
-                <div className="flex justify-between items-center mb-1">
-                  <label className="block text-xs font-semibold text-slate-600">Beceriler (Virgülle ayırın)</label>
-                  <SectionHeaderControls sectionId="skills" />
-                </div>
-                <input
-                  type="text"
-                  name="skills"
-                  value={cvData.skills}
-                  onChange={handleChange}
-                  className="w-full border border-slate-300 p-2.5 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                />
               </div>
             </div>
           </div>
 
-          {/* İş Deneyimi */}
-          <div>
-            <div className="flex justify-between items-center mb-4 pb-2 border-b">
-              <div className="flex items-center gap-2">
-                <h2 className="text-lg font-bold text-slate-800">İş Deneyimi</h2>
-                <SectionHeaderControls sectionId="experiences" />
-              </div>
-              <button
-                onClick={addExperience}
-                className="text-xs bg-blue-50 hover:bg-blue-100 text-blue-600 font-bold px-3 py-1.5 rounded-lg transition-all"
-              >
-                + Deneyim Ekle
-              </button>
-            </div>
-
-            <div className="space-y-4">
-              {cvData.experiences.map((exp) => (
-                <div key={exp.id} className="p-4 border border-slate-200 rounded-xl bg-slate-50 relative space-y-3">
-                  <button
-                    onClick={() => removeExperience(exp.id)}
-                    className="absolute top-3 right-3 text-red-500 hover:text-red-700 text-xs font-bold"
-                  >
-                    Sil ✕
-                  </button>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pr-8">
-                    <input
-                      type="text"
-                      placeholder="Şirket Adı"
-                      value={exp.company}
-                      onChange={(e) => handleExpChange(exp.id, "company", e.target.value)}
-                      className="border border-slate-300 p-2 rounded-lg text-xs w-full"
-                    />
-                    <input
-                      type="text"
-                      placeholder="Pozisyon / Unvan"
-                      value={exp.role}
-                      onChange={(e) => handleExpChange(exp.id, "role", e.target.value)}
-                      className="border border-slate-300 p-2 rounded-lg text-xs w-full"
-                    />
-                  </div>
-                  <input
-                    type="text"
-                    placeholder="Tarih / Yıl (Örn: 2020 - 2023)"
-                    value={exp.year}
-                    onChange={(e) => handleExpChange(exp.id, "year", e.target.value)}
-                    className="border border-slate-300 p-2 rounded-lg text-xs w-full"
-                  />
-                  <textarea
-                    placeholder="Açıklama / Sorumluluklar"
-                    rows={2}
-                    value={exp.desc}
-                    onChange={(e) => handleExpChange(exp.id, "desc", e.target.value)}
-                    className="border border-slate-300 p-2 rounded-lg text-xs w-full"
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Eğitim */}
-          <div>
-            <div className="flex justify-between items-center mb-4 pb-2 border-b">
-              <div className="flex items-center gap-2">
-                <h2 className="text-lg font-bold text-slate-800">Eğitim</h2>
-                <SectionHeaderControls sectionId="educations" />
-              </div>
-              <button
-                onClick={addEducation}
-                className="text-xs bg-blue-50 hover:bg-blue-100 text-blue-600 font-bold px-3 py-1.5 rounded-lg transition-all"
-              >
-                + Eğitim Ekle
-              </button>
-            </div>
-
-            <div className="space-y-4">
-              {cvData.educations.map((edu) => (
-                <div key={edu.id} className="p-4 border border-slate-200 rounded-xl bg-slate-50 relative space-y-3">
-                  <button
-                    onClick={() => removeEducation(edu.id)}
-                    className="absolute top-3 right-3 text-red-500 hover:text-red-700 text-xs font-bold"
-                  >
-                    Sil ✕
-                  </button>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pr-8">
-                    <input
-                      type="text"
-                      placeholder="Okul / Üniversite"
-                      value={edu.school}
-                      onChange={(e) => handleEduChange(edu.id, "school", e.target.value)}
-                      className="border border-slate-300 p-2 rounded-lg text-xs w-full"
-                    />
-                    <input
-                      type="text"
-                      placeholder="Bölüm / Derece"
-                      value={edu.degree}
-                      onChange={(e) => handleEduChange(edu.id, "degree", e.target.value)}
-                      className="border border-slate-300 p-2 rounded-lg text-xs w-full"
-                    />
-                  </div>
-                  <input
-                    type="text"
-                    placeholder="Yıl (Örn: 2017 - 2021)"
-                    value={edu.year}
-                    onChange={(e) => handleEduChange(edu.id, "year", e.target.value)}
-                    className="border border-slate-300 p-2 rounded-lg text-xs w-full"
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* KİŞİSELLEŞTİRİLMİŞ ÖZEL BÖLÜMLER (Sertifikalar, Yabancı Dil, Projeler vb.) */}
-          {cvData.customSections.map((sec) => (
-            <div key={sec.id} className="p-4 border border-blue-200 rounded-xl bg-blue-50/30 space-y-4">
-              <div className="flex justify-between items-center pb-2 border-b border-blue-200">
-                <div className="flex items-center gap-2 flex-1 mr-4">
-                  <input
-                    type="text"
-                    value={sec.sectionTitle}
-                    onChange={(e) => handleCustomSectionTitleChange(sec.id, e.target.value)}
-                    placeholder="Bölüm Başlığı (Örn: Sertifikalar)"
-                    className="font-bold text-slate-800 bg-white border border-slate-300 px-2 py-1 rounded text-sm w-full focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                  />
-                  <SectionHeaderControls sectionId={sec.id} />
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => addCustomItem(sec.id)}
-                    className="text-xs bg-blue-600 text-white font-semibold px-2.5 py-1 rounded hover:bg-blue-700 transition-all shrink-0"
-                  >
-                    + Madde Ekle
-                  </button>
-                  <button
-                    onClick={() => removeCustomSection(sec.id)}
-                    className="text-xs text-red-600 font-bold hover:underline shrink-0"
-                  >
-                    Bölümü Sil
-                  </button>
-                </div>
-              </div>
-
-              {/* Bölüm İçindeki Maddeler */}
-              <div className="space-y-3">
-                {sec.items.map((item) => (
-                  <div key={item.id} className="p-3 bg-white border border-slate-200 rounded-lg relative space-y-2">
-                    <button
-                      onClick={() => removeCustomItem(sec.id, item.id)}
-                      className="absolute top-2 right-2 text-red-500 hover:text-red-700 text-xs font-bold"
-                    >
-                      ✕
-                    </button>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 pr-6">
-                      <input
-                        type="text"
-                        placeholder="Başlık (Örn: İngilizce / AWS Sertifikası)"
-                        value={item.title}
-                        onChange={(e) => handleCustomItemChange(sec.id, item.id, "title", e.target.value)}
-                        className="border border-slate-300 p-1.5 rounded text-xs w-full"
-                      />
-                      <input
-                        type="text"
-                        placeholder="Alt Başlık / Seviye (Örn: C1 / Ağırlıklı Derece)"
-                        value={item.subtitle}
-                        onChange={(e) => handleCustomItemChange(sec.id, item.id, "subtitle", e.target.value)}
-                        className="border border-slate-300 p-1.5 rounded text-xs w-full"
-                      />
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                      <input
-                        type="text"
-                        placeholder="Tarih / Yıl (İsteğe Bağlı)"
-                        value={item.date}
-                        onChange={(e) => handleCustomItemChange(sec.id, item.id, "date", e.target.value)}
-                        className="border border-slate-300 p-1.5 rounded text-xs w-full"
-                      />
-                      <input
-                        type="text"
-                        placeholder="Kısa Açıklama (İsteğe Bağlı)"
-                        value={item.description}
-                        onChange={(e) => handleCustomItemChange(sec.id, item.id, "description", e.target.value)}
-                        className="border border-slate-300 p-1.5 rounded text-xs w-full"
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
+          {/* DİNAMİK SIRALAMAYA GÖRE SENKRONİZE FORM BÖLÜMLERİ */}
+          {cvData.sectionOrders.map((order) => renderFormSection(order))}
 
           {/* YENİ ÖZEL BÖLÜM EKLE BUTONU */}
           <div className="pt-2">
@@ -1033,7 +1050,7 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* Dinamik Bölüm Sıralaması */}
+              {/* Dinamik Bölüm Sıralaması (SENKRONİZE) */}
               {cvData.sectionOrders.map((order) => renderCVSection(order))}
             </div>
 
