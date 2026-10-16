@@ -37,7 +37,7 @@ const initialData: CVData = {
   photo: "",
   photoZoom: 100,
   photoX: 50, // Tam Ortada (%50)
-  photoY: 50, // Tam Ortada (%50)
+  photoY: 0,  // Doğrudan üst odak (%0) - Kafa kesilmesini önler
   fullName: "Ahmet Yılmaz",
   title: "Kıdemli Yazılım Geliştirici",
   email: "ahmet@example.com",
@@ -92,7 +92,7 @@ export default function Home() {
           ...parsed,
           photoZoom: parsed.photoZoom ?? 100,
           photoX: parsed.photoX ?? 50,
-          photoY: parsed.photoY ?? 50,
+          photoY: parsed.photoY ?? 0,
         });
       } catch (e) {
         console.error("Kayıtlı veri okunamadı", e);
@@ -120,7 +120,7 @@ export default function Home() {
           photo: base64Photo,
           photoZoom: 100,
           photoX: 50,
-          photoY: 20, // Kafayı üstten başlatmak için varsayılan %20
+          photoY: 0, // Yüzün doğrudan üstte görünmesi için varsayılan %0
         };
         setCvData(updated);
         localStorage.setItem("cvData", JSON.stringify(updated));
@@ -136,7 +136,7 @@ export default function Home() {
   };
 
   const removePhoto = () => {
-    const updated = { ...cvData, photo: "", photoZoom: 100, photoX: 50, photoY: 50 };
+    const updated = { ...cvData, photo: "", photoZoom: 100, photoX: 50, photoY: 0 };
     setCvData(updated);
     localStorage.setItem("cvData", JSON.stringify(updated));
   };
