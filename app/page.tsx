@@ -42,7 +42,7 @@ interface CVData {
   photoX: number;
   photoY: number;
   accentColor: string;
-  isBoldText: boolean; // Metin koyuluk / kalınlık tercihi
+  isBoldText: boolean;
   fullName: string;
   title: string;
   email: string;
@@ -71,13 +71,14 @@ const defaultSectionOrders: SectionOrder[] = [
   { id: "educations", type: "educations" },
 ];
 
-const initialData: CVData = {
+// JENERİK, ANONİM İLK AÇILIŞ ÖRNEK VERİSİ
+const sampleData: CVData = {
   photo: "",
   photoZoom: 100,
   photoX: 50,
   photoY: 0,
   accentColor: "#2563eb",
-  isBoldText: true, // Varsayılan olarak net ve koyu font
+  isBoldText: true,
   fullName: "Ahmet Yılmaz",
   title: "Kıdemli Yazılım Geliştirici",
   email: "ahmet@example.com",
@@ -89,17 +90,17 @@ const initialData: CVData = {
   experiences: [
     {
       id: "1",
-      company: "SHOW TV",
-      role: "RESİM SEÇİCİ OPERATÖRÜ",
-      year: "MART 2026 - HALEN",
-      desc: "Canlı yayın prodüksiyon ve reji kontrol süreçlerinin yönetimi.",
+      company: "ABC Teknoloji A.Ş.",
+      role: "Kıdemli Frontend Geliştirici",
+      year: "2022 - HALEN",
+      desc: "Ölçeklenebilir web uygulamalarının mimarisi ve kullanıcı arayüzü geliştirme süreçleri.",
     },
     {
       id: "2",
-      company: "EKOL TV",
-      role: "RESİM SEÇİCİ OPERATÖRÜ",
-      year: "MART 2025 - ARALIK 2026",
-      desc: "Stüdyo ve canlı yayın kumanda işlemleri.",
+      company: "XYZ Medya Ldt.",
+      role: "Yazılım Uzmanı",
+      year: "2019 - 2022",
+      desc: "Web tabanlı dinamik içerik yönetim sistemleri ve API entegrasyonları.",
     },
   ],
   educations: [
@@ -107,21 +108,36 @@ const initialData: CVData = {
       id: "1",
       school: "İstanbul Üniversitesi",
       degree: "Bilgisayar Mühendisliği",
-      year: "2017 - 2021",
-    },
-    {
-      id: "2",
-      school: "BAKIRKÖY İHL",
-      degree: "İMAMHATİP LİSESİ",
-      year: "2013 - 2017",
+      year: "2015 - 2019",
     },
   ],
   customSections: [],
   sectionOrders: defaultSectionOrders,
 };
 
+// TAMAMEN BOŞ FORM VERİSİ (SIFIRLA İÇİN)
+const emptyData: CVData = {
+  photo: "",
+  photoZoom: 100,
+  photoX: 50,
+  photoY: 0,
+  accentColor: "#2563eb",
+  isBoldText: true,
+  fullName: "",
+  title: "",
+  email: "",
+  phone: "",
+  location: "",
+  summary: "",
+  skills: "",
+  experiences: [],
+  educations: [],
+  customSections: [],
+  sectionOrders: defaultSectionOrders,
+};
+
 export default function Home() {
-  const [cvData, setCvData] = useState<CVData>(initialData);
+  const [cvData, setCvData] = useState<CVData>(sampleData);
   const [showPaywall, setShowPaywall] = useState(false);
 
   useEffect(() => {
@@ -130,7 +146,7 @@ export default function Home() {
       try {
         const parsed = JSON.parse(savedData);
         setCvData({
-          ...initialData,
+          ...sampleData,
           ...parsed,
           customSections: parsed.customSections || [],
           sectionOrders: parsed.sectionOrders || defaultSectionOrders,
@@ -161,6 +177,20 @@ export default function Home() {
     const updated = { ...cvData, isBoldText: !cvData.isBoldText };
     setCvData(updated);
     localStorage.setItem("cvData", JSON.stringify(updated));
+  };
+
+  // FORMU TAMAMEN TEMİZLE / SIFIRLA
+  const resetForm = () => {
+    if (window.confirm("Tüm bilgileri temizlemek istediğinize emin misiniz?")) {
+      setCvData(emptyData);
+      localStorage.removeItem("cvData");
+    }
+  };
+
+  // ÖRNEK VERİ YÜKLE
+  const loadSampleData = () => {
+    setCvData(sampleData);
+    localStorage.setItem("cvData", JSON.stringify(sampleData));
   };
 
   const moveSection = (sectionId: string, direction: "up" | "down") => {
@@ -429,6 +459,7 @@ export default function Home() {
               rows={3}
               value={cvData.summary}
               onChange={handleChange}
+              placeholder="Kendinizden ve kariyer hedeflerinizden bahsedin..."
               className="w-full border border-slate-300 p-2.5 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white"
             />
           </div>
@@ -446,6 +477,7 @@ export default function Home() {
               name="skills"
               value={cvData.skills}
               onChange={handleChange}
+              placeholder="Örn: React, Node.js, Proje Yönetimi"
               className="w-full border border-slate-300 p-2.5 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white"
             />
           </div>
@@ -652,9 +684,8 @@ export default function Home() {
     }
   };
 
-  // Sağ A4 Canlı Önizleme Render (NET, BOLD, KOYU BAŞLIKLAR)
+  // Sağ A4 Canlı Önizleme Render
   const renderCVSection = (order: SectionOrder) => {
-    // Ortak Bölüm Başlığı Bileşeni (Koyu ve Belirgin)
     const SectionHeader = ({ title }: { title: string }) => (
       <div className="mb-3 border-b-2 pb-1 flex items-center justify-between" style={{ borderColor: cvData.accentColor }}>
         <h3
@@ -836,8 +867,8 @@ export default function Home() {
         {/* SOL FORM */}
         <section className="bg-white rounded-xl p-6 shadow-sm border border-slate-200 overflow-y-auto max-h-[calc(100vh-120px)] space-y-6 print:hidden">
           
-          {/* TEMA RENGİ VE METİN KALINLIĞI SEÇİMİ */}
-          <div className="p-4 border border-slate-200 rounded-xl bg-slate-50 space-y-3">
+          {/* RENK, FONT KALINLIĞI VE FORMU SİFİR / ÖRNEK BUTONLARI */}
+          <div className="p-4 border border-slate-200 rounded-xl bg-slate-50 space-y-4">
             <div className="flex flex-wrap justify-between items-center gap-4">
               <div>
                 <label className="block text-xs font-bold text-slate-800 mb-2">
@@ -863,10 +894,7 @@ export default function Home() {
                 </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-bold text-slate-800 mb-2">
-                  Metin Görünümü (Font Koyu/Bold)
-                </label>
+              <div className="flex items-center gap-2">
                 <button
                   onClick={toggleBoldText}
                   className={`px-3 py-1.5 text-xs font-bold rounded-lg border transition-all ${
@@ -874,8 +902,25 @@ export default function Home() {
                       ? "bg-slate-900 text-white border-slate-900 shadow-sm"
                       : "bg-white text-slate-700 border-slate-300 hover:bg-slate-100"
                   }`}
+                  title="Görünümü daha belirgin ve koyu yapar"
                 >
-                  {cvData.isBoldText ? "✓ Koyu / Bold Modu Açık" : "Normal Mod"}
+                  {cvData.isBoldText ? "✓ Koyu / Bold" : "Normal Mod"}
+                </button>
+
+                <button
+                  onClick={resetForm}
+                  className="px-3 py-1.5 text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-lg transition-all flex items-center gap-1"
+                  title="Tüm alanları sıfırlar"
+                >
+                  🗑️ Sıfırla
+                </button>
+
+                <button
+                  onClick={loadSampleData}
+                  className="px-3 py-1.5 text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg transition-all"
+                  title="Örnek veriyi yükler"
+                >
+                  ⚡ Örnek Yükle
                 </button>
               </div>
             </div>
@@ -990,6 +1035,7 @@ export default function Home() {
                     name="fullName"
                     value={cvData.fullName}
                     onChange={handleChange}
+                    placeholder="Adınız Soyadınız"
                     className="w-full border border-slate-300 p-2 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white"
                   />
                 </div>
@@ -1000,6 +1046,7 @@ export default function Home() {
                     name="title"
                     value={cvData.title}
                     onChange={handleChange}
+                    placeholder="Mesleki Unvanınız"
                     className="w-full border border-slate-300 p-2 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white"
                   />
                 </div>
@@ -1013,6 +1060,7 @@ export default function Home() {
                     name="email"
                     value={cvData.email}
                     onChange={handleChange}
+                    placeholder="eposta@ornek.com"
                     className="w-full border border-slate-300 p-2 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white"
                   />
                 </div>
@@ -1023,6 +1071,7 @@ export default function Home() {
                     name="phone"
                     value={cvData.phone}
                     onChange={handleChange}
+                    placeholder="+90 5XX XXX XX XX"
                     className="w-full border border-slate-300 p-2 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white"
                   />
                 </div>
@@ -1033,6 +1082,7 @@ export default function Home() {
                     name="location"
                     value={cvData.location}
                     onChange={handleChange}
+                    placeholder="Şehir, Ülke"
                     className="w-full border border-slate-300 p-2 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white"
                   />
                 </div>
