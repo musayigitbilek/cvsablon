@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 
 interface ExperienceItem {
   id: string;
@@ -41,10 +41,17 @@ const initialData: CVData = {
   experiences: [
     {
       id: "1",
-      company: "Teknoloji A.Ş.",
-      role: "Frontend Developer",
-      year: "2022 - Halen",
-      desc: "Performanslı web uygulamaları ve dinamik kullanıcı arayüzleri geliştirme.",
+      company: "SHOW TV",
+      role: "RESİM SEÇİCİ OPERATÖRÜ",
+      year: "MART 2026 - HALEN",
+      desc: "Canlı yayın prodüksiyon ve reji kontrol süreçlerinin yönetimi.",
+    },
+    {
+      id: "2",
+      company: "EKOL TV",
+      role: "RESİM SEÇİCİ OPERATÖRÜ",
+      year: "MART 2025 - ARALIK 2026",
+      desc: "Stüdyo ve canlı yayın kumanda işlemleri.",
     },
   ],
   educations: [
@@ -54,16 +61,19 @@ const initialData: CVData = {
       degree: "Bilgisayar Mühendisliği",
       year: "2017 - 2021",
     },
+    {
+      id: "2",
+      school: "BAKIRKÖY İHL",
+      degree: "İMAMHATİP LİSESİ",
+      year: "2013 - 2017",
+    },
   ],
 };
 
 export default function Home() {
   const [cvData, setCvData] = useState<CVData>(initialData);
   const [showPaywall, setShowPaywall] = useState(false);
-  const [isDownloading, setIsDownloading] = useState(false);
-  const cvPreviewRef = useRef<HTMLDivElement>(null);
 
-  // Yerel hafızadan yükleme
   useEffect(() => {
     const savedData = localStorage.getItem("cvData");
     if (savedData) {
@@ -75,7 +85,6 @@ export default function Home() {
     }
   }, []);
 
-  // Form değişikliği ve kaydetme
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
@@ -85,7 +94,6 @@ export default function Home() {
     localStorage.setItem("cvData", JSON.stringify(updated));
   };
 
-  // Deneyim Ekle / Sil / Güncelle
   const addExperience = () => {
     const newExp: ExperienceItem = {
       id: Date.now().toString(),
@@ -120,7 +128,6 @@ export default function Home() {
     localStorage.setItem("cvData", JSON.stringify(updated));
   };
 
-  // Eğitim Ekle / Sil / Güncelle
   const addEducation = () => {
     const newEdu: EducationItem = {
       id: Date.now().toString(),
@@ -151,38 +158,42 @@ export default function Home() {
     localStorage.setItem("cvData", JSON.stringify(updated));
   };
 
-  // Gerçek PDF İndirme Fonksiyonu
-  const handleDownloadPDF = async (isPro: boolean = false) => {
-    if (!cvPreviewRef.current) return;
-    setIsDownloading(true);
-
-    try {
-      // @ts-ignore
-      const html2pdf = (await import("html2pdf.js")).default;
-      const element = cvPreviewRef.current;
-
-      const opt = {
-        margin: 0,
-        filename: `${cvData.fullName || "cv"}_CVSablon.pdf`,
-        image: { type: "jpeg" as const, quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true },
-        jsPDF: { unit: "mm", format: "a4", orientation: "portrait" as const },
-      };
-
-      await html2pdf().set(opt).from(element).save();
-    } catch (err) {
-      console.error("PDF oluşturma hatası:", err);
-      alert("PDF indirilirken bir hata oluştu. Lütfen tekrar deneyin.");
-    } finally {
-      setIsDownloading(false);
-      setShowPaywall(false);
-    }
+  const handleDownloadPDF = (isPro: boolean = false) => {
+    setShowPaywall(false);
+    setTimeout(() => {
+      window.print();
+    }, 100);
   };
 
   return (
     <div className="min-h-screen bg-slate-100 flex flex-col font-sans">
+      {/* Baskı özel stili: Baskı alırken sadece CV kısmını gösterir */}
+      <style jsx global>{`
+        @media print {
+          body * {
+            visibility: hidden;
+          }
+          #printable-cv, #printable-cv * {
+            visibility: visible;
+          }
+          #printable-cv {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            margin: 0;
+            padding: 20px;
+            box-shadow: none !important;
+          }
+          @page {
+            size: A4;
+            margin: 0;
+          }
+        }
+      `}</style>
+
       {/* Header */}
-      <header className="bg-white border-b border-slate-200 px-6 py-4 flex justify-between items-center sticky top-0 z-10 shadow-sm">
+      <header className="bg-white border-b border-slate-200 px-6 py-4 flex justify-between items-center sticky top-0 z-10 shadow-sm print:hidden">
         <div className="flex items-center gap-2">
           <div className="bg-blue-600 text-white p-2 rounded-lg font-bold text-xl">
             CV
@@ -203,10 +214,10 @@ export default function Home() {
       </header>
 
       {/* Main Grid */}
-      <main className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-6 p-6 max-w-[1600px] w-full mx-auto">
+      <main className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-6 p-6 max-w-[1600px] w-full mx-auto print:block print:p-0">
         
         {/* SOL FORM */}
-        <section className="bg-white rounded-xl p-6 shadow-sm border border-slate-200 overflow-y-auto max-h-[calc(100vh-120px)] space-y-8">
+        <section className="bg-white rounded-xl p-6 shadow-sm border border-slate-200 overflow-y-auto max-h-[calc(100vh-120px)] space-y-8 print:hidden">
           
           {/* Kişisel Bilgiler */}
           <div>
@@ -402,9 +413,9 @@ export default function Home() {
         </section>
 
         {/* SAĞ CANLI ÖNİZLEME */}
-        <section className="bg-slate-200 rounded-xl p-6 shadow-inner flex justify-center items-start overflow-y-auto max-h-[calc(100vh-120px)]">
+        <section className="bg-slate-200 rounded-xl p-6 shadow-inner flex justify-center items-start overflow-y-auto max-h-[calc(100vh-120px)] print:bg-white print:p-0 print:max-h-none">
           <div
-            ref={cvPreviewRef}
+            id="printable-cv"
             className="bg-white w-full max-w-[595px] min-h-[842px] p-8 shadow-xl rounded-sm flex flex-col justify-between text-slate-800 relative"
           >
             <div>
@@ -455,7 +466,7 @@ export default function Home() {
                         <span className="text-xs text-slate-400">{exp.year}</span>
                       </div>
                       <div className="text-xs text-blue-600 font-medium mb-1">{exp.company}</div>
-                      <p className="text-xs text-slate-600 leading-normal">{exp.desc}</p>
+                      {exp.desc && <p className="text-xs text-slate-600 leading-normal">{exp.desc}</p>}
                     </div>
                   ))}
                 </div>
@@ -490,7 +501,7 @@ export default function Home() {
 
       {/* İndirme Modal */}
       {showPaywall && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 print:hidden">
           <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl relative">
             <button
               onClick={() => setShowPaywall(false)}
@@ -512,11 +523,10 @@ export default function Home() {
                   <p className="text-xs text-slate-500 mt-1">Alt kısımda cvsablon.com filigranı yer alır.</p>
                 </div>
                 <button
-                  disabled={isDownloading}
                   onClick={() => handleDownloadPDF(false)}
-                  className="mt-4 w-full bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold py-2 rounded-lg text-sm transition-all disabled:opacity-50"
+                  className="mt-4 w-full bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold py-2 rounded-lg text-sm transition-all"
                 >
-                  {isDownloading ? "Oluşturuluyor..." : "Ücretsiz İndir"}
+                  Ücretsiz İndir (PDF Kaydet)
                 </button>
               </div>
 
