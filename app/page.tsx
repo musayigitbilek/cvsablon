@@ -121,7 +121,7 @@ export default function Home() {
         const updated = {
           ...cvData,
           photo: base64Photo,
-          photoZoom: 1,
+          photoZoom: 1.2, // İlk açılışta hafif zoom ile kafayı kurtarır
           photoX: 0,
           photoY: 0,
         };
@@ -247,18 +247,18 @@ export default function Home() {
         }
       `}</style>
 
-      {/* Büyütülmüş & Netleştirilmiş Header Logo */}
-      <header className="bg-white border-b border-slate-200 px-8 py-3.5 flex justify-between items-center sticky top-0 z-10 shadow-sm print:hidden">
+      {/* Jilet Gibi Dev ve Net Header Logo */}
+      <header className="bg-white border-b border-slate-200 px-8 py-4 flex justify-between items-center sticky top-0 z-10 shadow-sm print:hidden">
         <div className="flex items-center gap-3">
           <img
             src="/logo.png"
             alt="CVSablon.com Logo"
-            className="h-12 md:h-14 w-auto object-contain transition-all"
+            className="h-16 md:h-20 w-auto object-contain transition-all"
           />
         </div>
         <button
           onClick={() => setShowPaywall(true)}
-          className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2.5 rounded-xl shadow-md transition-all flex items-center gap-2 text-sm"
+          className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-xl shadow-md transition-all flex items-center gap-2 text-sm"
         >
           <span>CV'yi İndir</span>
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -283,11 +283,11 @@ export default function Home() {
             <div className="mb-6 p-4 border border-dashed border-slate-300 rounded-xl bg-slate-50 space-y-4">
               <div className="flex items-center gap-4">
                 {cvData.photo ? (
-                  <div className="relative w-16 h-16 rounded-full overflow-hidden border-2 border-blue-600 shrink-0 bg-slate-200">
+                  <div className="relative w-16 h-16 rounded-full overflow-hidden border-2 border-blue-600 shrink-0 bg-slate-200 flex items-center justify-center">
                     <img
                       src={cvData.photo}
                       alt="Profil"
-                      className="w-full h-full object-cover origin-center"
+                      className="w-full h-full object-cover"
                       style={{
                         transform: `scale(${cvData.photoZoom}) translate(${cvData.photoX}px, ${cvData.photoY}px)`,
                       }}
@@ -326,13 +326,13 @@ export default function Home() {
                 <div className="pt-3 border-t border-slate-200 grid grid-cols-1 md:grid-cols-3 gap-3">
                   <div>
                     <div className="flex justify-between text-[11px] font-semibold text-slate-600 mb-1">
-                      <span>Yukarı / Aşağı</span>
+                      <span>Aşağı / Yukarı (Y)</span>
                       <span>{cvData.photoY}px</span>
                     </div>
                     <input
                       type="range"
-                      min="-50"
-                      max="50"
+                      min="-80"
+                      max="80"
                       value={cvData.photoY}
                       onChange={(e) => handlePhotoAdjust("photoY", Number(e.target.value))}
                       className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
@@ -341,13 +341,13 @@ export default function Home() {
 
                   <div>
                     <div className="flex justify-between text-[11px] font-semibold text-slate-600 mb-1">
-                      <span>Sağa / Sola</span>
+                      <span>Sağa / Sola (X)</span>
                       <span>{cvData.photoX}px</span>
                     </div>
                     <input
                       type="range"
-                      min="-50"
-                      max="50"
+                      min="-80"
+                      max="80"
                       value={cvData.photoX}
                       onChange={(e) => handlePhotoAdjust("photoX", Number(e.target.value))}
                       className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
@@ -356,13 +356,13 @@ export default function Home() {
 
                   <div>
                     <div className="flex justify-between text-[11px] font-semibold text-slate-600 mb-1">
-                      <span>Yakınlaştır (Zoom)</span>
+                      <span>Zoom (Boyut)</span>
                       <span>{cvData.photoZoom.toFixed(1)}x</span>
                     </div>
                     <input
                       type="range"
-                      min="0.8"
-                      max="2.5"
+                      min="0.5"
+                      max="3.0"
                       step="0.1"
                       value={cvData.photoZoom}
                       onChange={(e) => handlePhotoAdjust("photoZoom", Number(e.target.value))}
@@ -572,11 +572,11 @@ export default function Home() {
               <div className="border-b-2 border-blue-600 pb-4 mb-6 flex items-start gap-5">
                 {/* Profil Resmi Var İse Göster */}
                 {cvData.photo && (
-                  <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-blue-600 shrink-0 shadow-sm bg-slate-100 relative">
+                  <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-blue-600 shrink-0 shadow-sm bg-slate-100 relative flex items-center justify-center">
                     <img
                       src={cvData.photo}
                       alt={cvData.fullName}
-                      className="w-full h-full object-cover origin-center"
+                      className="w-full h-full object-cover"
                       style={{
                         transform: `scale(${cvData.photoZoom}) translate(${cvData.photoX}px, ${cvData.photoY}px)`,
                       }}
