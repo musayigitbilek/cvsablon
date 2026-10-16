@@ -20,8 +20,8 @@ interface EducationItem {
 interface CVData {
   photo: string;
   photoZoom: number;
-  photoX: number;
-  photoY: number;
+  photoX: number; // 0% - 100%
+  photoY: number; // 0% - 100%
   fullName: string;
   title: string;
   email: string;
@@ -35,9 +35,9 @@ interface CVData {
 
 const initialData: CVData = {
   photo: "",
-  photoZoom: 1,
-  photoX: 0,
-  photoY: 0,
+  photoZoom: 100,
+  photoX: 50, // Tam Ortada (%50)
+  photoY: 50, // Tam Ortada (%50)
   fullName: "Ahmet Yılmaz",
   title: "Kıdemli Yazılım Geliştirici",
   email: "ahmet@example.com",
@@ -90,9 +90,9 @@ export default function Home() {
         setCvData({
           ...initialData,
           ...parsed,
-          photoZoom: parsed.photoZoom ?? 1,
-          photoX: parsed.photoX ?? 0,
-          photoY: parsed.photoY ?? 0,
+          photoZoom: parsed.photoZoom ?? 100,
+          photoX: parsed.photoX ?? 50,
+          photoY: parsed.photoY ?? 50,
         });
       } catch (e) {
         console.error("Kayıtlı veri okunamadı", e);
@@ -118,9 +118,9 @@ export default function Home() {
         const updated = {
           ...cvData,
           photo: base64Photo,
-          photoZoom: 1,
-          photoX: 0,
-          photoY: 0,
+          photoZoom: 100,
+          photoX: 50,
+          photoY: 20, // Kafayı üstten başlatmak için varsayılan %20
         };
         setCvData(updated);
         localStorage.setItem("cvData", JSON.stringify(updated));
@@ -136,7 +136,7 @@ export default function Home() {
   };
 
   const removePhoto = () => {
-    const updated = { ...cvData, photo: "", photoZoom: 1, photoX: 0, photoY: 0 };
+    const updated = { ...cvData, photo: "", photoZoom: 100, photoX: 50, photoY: 50 };
     setCvData(updated);
     localStorage.setItem("cvData", JSON.stringify(updated));
   };
@@ -238,13 +238,13 @@ export default function Home() {
         }
       `}</style>
 
-      {/* Header Logo Alanı */}
-      <header className="bg-white border-b border-slate-200 px-8 py-3 flex justify-between items-center sticky top-0 z-10 shadow-sm print:hidden min-h-[72px]">
+      {/* Header */}
+      <header className="bg-white border-b border-slate-200 px-8 py-3 flex justify-between items-center sticky top-0 z-10 shadow-sm print:hidden">
         <div className="flex items-center gap-3">
           <img
             src="/logo.png"
             alt="CVSablon.com Logo"
-            className="max-h-14 w-auto object-contain"
+            className="h-12 md:h-16 w-auto object-contain"
           />
         </div>
         <button
@@ -273,13 +273,14 @@ export default function Home() {
             <div className="mb-6 p-4 border border-dashed border-slate-300 rounded-xl bg-slate-50 space-y-4">
               <div className="flex items-center gap-4">
                 {cvData.photo ? (
-                  <div className="relative w-20 h-20 rounded-full overflow-hidden border-2 border-blue-600 shrink-0 bg-slate-200 flex items-center justify-center">
+                  <div className="relative w-20 h-20 rounded-full overflow-hidden border-2 border-blue-600 shrink-0 bg-slate-200">
                     <img
                       src={cvData.photo}
                       alt="Profil"
                       className="w-full h-full object-cover"
                       style={{
-                        transform: `scale(${cvData.photoZoom}) translate(${cvData.photoX}px, ${cvData.photoY}px)`,
+                        objectPosition: `${cvData.photoX}% ${cvData.photoY}%`,
+                        transform: `scale(${cvData.photoZoom / 100})`,
                       }}
                     />
                   </div>
@@ -316,12 +317,12 @@ export default function Home() {
                 <div className="pt-3 border-t border-slate-200 grid grid-cols-1 md:grid-cols-3 gap-3">
                   <div>
                     <div className="flex justify-between text-[11px] font-semibold text-slate-600 mb-1">
-                      <span>Aşağı / Yukarı</span>
-                      <span>{cvData.photoY}px</span>
+                      <span>Dikey Odak (Yükseklik)</span>
+                      <span>%{cvData.photoY}</span>
                     </div>
                     <input
                       type="range"
-                      min="-100"
+                      min="0"
                       max="100"
                       value={cvData.photoY}
                       onChange={(e) => handlePhotoAdjust("photoY", Number(e.target.value))}
@@ -331,12 +332,12 @@ export default function Home() {
 
                   <div>
                     <div className="flex justify-between text-[11px] font-semibold text-slate-600 mb-1">
-                      <span>Sağa / Sola</span>
-                      <span>{cvData.photoX}px</span>
+                      <span>Yatay Odak (Sağ/Sol)</span>
+                      <span>%{cvData.photoX}</span>
                     </div>
                     <input
                       type="range"
-                      min="-100"
+                      min="0"
                       max="100"
                       value={cvData.photoX}
                       onChange={(e) => handlePhotoAdjust("photoX", Number(e.target.value))}
@@ -346,14 +347,13 @@ export default function Home() {
 
                   <div>
                     <div className="flex justify-between text-[11px] font-semibold text-slate-600 mb-1">
-                      <span>Yakınlaştır / Uzaklaştır</span>
-                      <span>{cvData.photoZoom.toFixed(1)}x</span>
+                      <span>Boyut (Zoom)</span>
+                      <span>%{cvData.photoZoom}</span>
                     </div>
                     <input
                       type="range"
-                      min="0.5"
-                      max="3.0"
-                      step="0.1"
+                      min="50"
+                      max="200"
                       value={cvData.photoZoom}
                       onChange={(e) => handlePhotoAdjust("photoZoom", Number(e.target.value))}
                       className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
@@ -562,13 +562,14 @@ export default function Home() {
               <div className="border-b-2 border-blue-600 pb-4 mb-6 flex items-start gap-5">
                 {/* Profil Resmi Var İse Göster */}
                 {cvData.photo && (
-                  <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-blue-600 shrink-0 shadow-sm bg-slate-100 relative flex items-center justify-center">
+                  <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-blue-600 shrink-0 shadow-sm bg-slate-100 relative">
                     <img
                       src={cvData.photo}
                       alt={cvData.fullName}
                       className="w-full h-full object-cover"
                       style={{
-                        transform: `scale(${cvData.photoZoom}) translate(${cvData.photoX}px, ${cvData.photoY}px)`,
+                        objectPosition: `${cvData.photoX}% ${cvData.photoY}%`,
+                        transform: `scale(${cvData.photoZoom / 100})`,
                       }}
                     />
                   </div>
