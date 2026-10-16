@@ -82,7 +82,6 @@ export default function Home() {
   const [cvData, setCvData] = useState<CVData>(initialData);
   const [showPaywall, setShowPaywall] = useState(false);
 
-  // Yerel hafızadan yükleme
   useEffect(() => {
     const savedData = localStorage.getItem("cvData");
     if (savedData) {
@@ -101,7 +100,6 @@ export default function Home() {
     }
   }, []);
 
-  // Form değişikliği
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
@@ -111,7 +109,6 @@ export default function Home() {
     localStorage.setItem("cvData", JSON.stringify(updated));
   };
 
-  // Fotoğraf Yükleme İşlemi (Base64)
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -121,7 +118,7 @@ export default function Home() {
         const updated = {
           ...cvData,
           photo: base64Photo,
-          photoZoom: 1.2, // İlk açılışta hafif zoom ile kafayı kurtarır
+          photoZoom: 1,
           photoX: 0,
           photoY: 0,
         };
@@ -132,21 +129,18 @@ export default function Home() {
     }
   };
 
-  // Fotoğraf Konum Ayarları
   const handlePhotoAdjust = (field: "photoZoom" | "photoX" | "photoY", value: number) => {
     const updated = { ...cvData, [field]: value };
     setCvData(updated);
     localStorage.setItem("cvData", JSON.stringify(updated));
   };
 
-  // Fotoğrafı Silme
   const removePhoto = () => {
     const updated = { ...cvData, photo: "", photoZoom: 1, photoX: 0, photoY: 0 };
     setCvData(updated);
     localStorage.setItem("cvData", JSON.stringify(updated));
   };
 
-  // Deneyim Yönetimi
   const addExperience = () => {
     const newExp: ExperienceItem = {
       id: Date.now().toString(),
@@ -181,7 +175,6 @@ export default function Home() {
     localStorage.setItem("cvData", JSON.stringify(updated));
   };
 
-  // Eğitim Yönetimi
   const addEducation = () => {
     const newEdu: EducationItem = {
       id: Date.now().toString(),
@@ -212,7 +205,6 @@ export default function Home() {
     localStorage.setItem("cvData", JSON.stringify(updated));
   };
 
-  // Garantili PDF / Yazdırma Fonksiyonu
   const handleDownloadPDF = () => {
     setShowPaywall(false);
     setTimeout(() => {
@@ -222,7 +214,6 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-slate-100 flex flex-col font-sans">
-      {/* Baskı özel CSS kuralları */}
       <style jsx global>{`
         @media print {
           body * {
@@ -247,18 +238,18 @@ export default function Home() {
         }
       `}</style>
 
-      {/* Jilet Gibi Dev ve Net Header Logo */}
-      <header className="bg-white border-b border-slate-200 px-8 py-4 flex justify-between items-center sticky top-0 z-10 shadow-sm print:hidden">
+      {/* Header Logo Alanı */}
+      <header className="bg-white border-b border-slate-200 px-8 py-3 flex justify-between items-center sticky top-0 z-10 shadow-sm print:hidden min-h-[72px]">
         <div className="flex items-center gap-3">
           <img
             src="/logo.png"
             alt="CVSablon.com Logo"
-            className="h-16 md:h-20 w-auto object-contain transition-all"
+            className="max-h-14 w-auto object-contain"
           />
         </div>
         <button
           onClick={() => setShowPaywall(true)}
-          className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-xl shadow-md transition-all flex items-center gap-2 text-sm"
+          className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2.5 rounded-xl shadow-md transition-all flex items-center gap-2 text-sm"
         >
           <span>CV'yi İndir</span>
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -273,7 +264,6 @@ export default function Home() {
         {/* SOL FORM */}
         <section className="bg-white rounded-xl p-6 shadow-sm border border-slate-200 overflow-y-auto max-h-[calc(100vh-120px)] space-y-8 print:hidden">
           
-          {/* Kişisel Bilgiler & Fotoğraf */}
           <div>
             <h2 className="text-lg font-bold text-slate-800 mb-4 pb-2 border-b">
               Kişisel Bilgiler
@@ -283,7 +273,7 @@ export default function Home() {
             <div className="mb-6 p-4 border border-dashed border-slate-300 rounded-xl bg-slate-50 space-y-4">
               <div className="flex items-center gap-4">
                 {cvData.photo ? (
-                  <div className="relative w-16 h-16 rounded-full overflow-hidden border-2 border-blue-600 shrink-0 bg-slate-200 flex items-center justify-center">
+                  <div className="relative w-20 h-20 rounded-full overflow-hidden border-2 border-blue-600 shrink-0 bg-slate-200 flex items-center justify-center">
                     <img
                       src={cvData.photo}
                       alt="Profil"
@@ -294,7 +284,7 @@ export default function Home() {
                     />
                   </div>
                 ) : (
-                  <div className="w-16 h-16 rounded-full bg-slate-200 border-2 border-dashed border-slate-300 flex items-center justify-center text-slate-400 text-2xl shrink-0">
+                  <div className="w-20 h-20 rounded-full bg-slate-200 border-2 border-dashed border-slate-300 flex items-center justify-center text-slate-400 text-2xl shrink-0">
                     📷
                   </div>
                 )}
@@ -326,13 +316,13 @@ export default function Home() {
                 <div className="pt-3 border-t border-slate-200 grid grid-cols-1 md:grid-cols-3 gap-3">
                   <div>
                     <div className="flex justify-between text-[11px] font-semibold text-slate-600 mb-1">
-                      <span>Aşağı / Yukarı (Y)</span>
+                      <span>Aşağı / Yukarı</span>
                       <span>{cvData.photoY}px</span>
                     </div>
                     <input
                       type="range"
-                      min="-80"
-                      max="80"
+                      min="-100"
+                      max="100"
                       value={cvData.photoY}
                       onChange={(e) => handlePhotoAdjust("photoY", Number(e.target.value))}
                       className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
@@ -341,13 +331,13 @@ export default function Home() {
 
                   <div>
                     <div className="flex justify-between text-[11px] font-semibold text-slate-600 mb-1">
-                      <span>Sağa / Sola (X)</span>
+                      <span>Sağa / Sola</span>
                       <span>{cvData.photoX}px</span>
                     </div>
                     <input
                       type="range"
-                      min="-80"
-                      max="80"
+                      min="-100"
+                      max="100"
                       value={cvData.photoX}
                       onChange={(e) => handlePhotoAdjust("photoX", Number(e.target.value))}
                       className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
@@ -356,7 +346,7 @@ export default function Home() {
 
                   <div>
                     <div className="flex justify-between text-[11px] font-semibold text-slate-600 mb-1">
-                      <span>Zoom (Boyut)</span>
+                      <span>Yakınlaştır / Uzaklaştır</span>
                       <span>{cvData.photoZoom.toFixed(1)}x</span>
                     </div>
                     <input
