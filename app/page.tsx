@@ -2,6 +2,20 @@
 
 import React, { useState, useEffect } from "react";
 
+interface CustomSectionItem {
+  id: string;
+  title: string;
+  subtitle: string;
+  date: string;
+  description: string;
+}
+
+interface CustomSection {
+  id: string;
+  sectionTitle: string;
+  items: CustomSectionItem[];
+}
+
 interface ExperienceItem {
   id: string;
   company: string;
@@ -18,9 +32,8 @@ interface EducationItem {
 }
 
 interface SectionOrder {
-  id: "summary" | "skills" | "experiences" | "educations";
-  title: string;
-  visible: boolean;
+  id: string; // 'summary' | 'skills' | 'experiences' | 'educations' | veya customSection id'si
+  type: "summary" | "skills" | "experiences" | "educations" | "custom";
 }
 
 interface CVData {
@@ -38,7 +51,8 @@ interface CVData {
   skills: string;
   experiences: ExperienceItem[];
   educations: EducationItem[];
-  sections: SectionOrder[];
+  customSections: CustomSection[];
+  sectionOrders: SectionOrder[];
 }
 
 const COLOR_OPTIONS = [
@@ -49,11 +63,11 @@ const COLOR_OPTIONS = [
   { name: "Asil Siyah", value: "#0f172a", bg: "bg-slate-900" },
 ];
 
-const defaultSections: SectionOrder[] = [
-  { id: "summary", title: "Hakkımda", visible: true },
-  { id: "skills", title: "Beceriler", visible: true },
-  { id: "experiences", title: "İş Deneyimi", visible: true },
-  { id: "educations", title: "Eğitim", visible: true },
+const defaultSectionOrders: SectionOrder[] = [
+  { id: "summary", type: "summary" },
+  { id: "skills", type: "skills" },
+  { id: "experiences", type: "experiences" },
+  { id: "educations", type: "educations" },
 ];
 
 const initialData: CVData = {
@@ -100,7 +114,8 @@ const initialData: CVData = {
       year: "2013 - 2017",
     },
   ],
-  sections: defaultSections,
+  customSections: [],
+  sectionOrders: defaultSectionOrders,
 };
 
 export default function Home() {
@@ -115,11 +130,8 @@ export default function Home() {
         setCvData({
           ...initialData,
           ...parsed,
-          photoZoom: parsed.photoZoom ?? 100,
-          photoX: parsed.photoX ?? 50,
-          photoY: parsed.photoY ?? 0,
-          accentColor: parsed.accentColor ?? "#2563eb",
-          sections: parsed.sections || defaultSections,
+          customSections: parsed.customSections || [],
+          sectionOrders: parsed.sectionOrders || defaultSectionOrders,
         });
       } catch (e) {
         console.error("Kayıtlı veri okunamadı", e);
@@ -142,31 +154,134 @@ export default function Home() {
     localStorage.setItem("cvData", JSON.stringify(updated));
   };
 
-  // Bölüm Sıralamasını Değiştirme (Yukarı / Aşağı)
-  const moveSection = (index: number, direction: "up" | "down") => {
-    const newSections = [...cvData.sections];
+  // Sıralama Değiştirici (Bölüm Kartlarının Yanındaki Oklar)
+  const moveSection = (sectionId: string, direction: "up" | "down") => {
+    const orders = [...cvData.sectionOrders];
+    const index = orders.findIndex((s) => s.id === sectionId);
+    if (index === -1) return;
+
     const targetIndex = direction === "up" ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= orders.length) return;
 
-    if (targetIndex < 0 || targetIndex >= newSections.length) return;
+    const [moved] = orders.splice(index, 1);
+    orders.splice(targetIndex, 0, moved);
 
-    const [moved] = newSections.splice(index, 1);
-    newSections.splice(targetIndex, 0, moved);
-
-    const updated = { ...cvData, sections: newSections };
+    const updated = { ...cvData, sectionOrders: orders };
     setCvData(updated);
     localStorage.setItem("cvData", JSON.stringify(updated));
   };
 
-  // Bölüm Başlığı Değiştirme
-  const handleSectionTitleChange = (id: string, newTitle: string) => {
-    const updatedSections = cvData.sections.map((sec) =>
-      sec.id === id ? { ...sec, title: newTitle } : sec
+  // Özel Bölüm Ekleme (Sertifikalar, Diller vs.)
+  const addCustomSection = () => {
+    const newId = "custom_" + Date.now();
+    const newSection: CustomSection = {
+      id: newId,
+      sectionTitle: "Yabancı Diller & Sertifikalar",
+      items: [
+        {
+          id: Date.now().toString(),
+          title: "İngilizce",
+          subtitle: "İleri Seviye (C1)",
+          date: "",
+          description: "",
+        },
+      ],
+    };
+
+    const updatedCustoms = [...cvData.customSections, newSection];
+    const updatedOrders = [
+      ...cvData.sectionOrders,
+      { id: newId, type: "custom" as const },
+    ];
+
+    const updated = {
+      ...cvData,
+      customSections: updatedCustoms,
+      sectionOrders: updatedOrders,
+    };
+    setCvData(updated);
+    localStorage.setItem("cvData", JSON.stringify(updated));
+  };
+
+  // Özel Bölüm Silme
+  const removeCustomSection = (sectionId: string) => {
+    const updatedCustoms = cvData.customSections.filter((s) => s.id !== sectionId);
+    const updatedOrders = cvData.sectionOrders.filter((s) => s.id !== sectionId);
+
+    const updated = {
+      ...cvData,
+      customSections: updatedCustoms,
+      sectionOrders: updatedOrders,
+    };
+    setCvData(updated);
+    localStorage.setItem("cvData", JSON.stringify(updated));
+  };
+
+  // Özel Bölüm Başlığı Değiştirme
+  const handleCustomSectionTitleChange = (sectionId: string, title: string) => {
+    const updatedCustoms = cvData.customSections.map((s) =>
+      s.id === sectionId ? { ...s, sectionTitle: title } : s
     );
-    const updated = { ...cvData, sections: updatedSections };
+    const updated = { ...cvData, customSections: updatedCustoms };
     setCvData(updated);
     localStorage.setItem("cvData", JSON.stringify(updated));
   };
 
+  // Özel Bölüme Madde Ekleme
+  const addCustomItem = (sectionId: string) => {
+    const newItem: CustomSectionItem = {
+      id: Date.now().toString(),
+      title: "",
+      subtitle: "",
+      date: "",
+      description: "",
+    };
+
+    const updatedCustoms = cvData.customSections.map((s) =>
+      s.id === sectionId ? { ...s, items: [...s.items, newItem] } : s
+    );
+
+    const updated = { ...cvData, customSections: updatedCustoms };
+    setCvData(updated);
+    localStorage.setItem("cvData", JSON.stringify(updated));
+  };
+
+  // Özel Bölüm Maddesini Silme
+  const removeCustomItem = (sectionId: string, itemId: string) => {
+    const updatedCustoms = cvData.customSections.map((s) =>
+      s.id === sectionId
+        ? { ...s, items: s.items.filter((item) => item.id !== itemId) }
+        : s
+    );
+
+    const updated = { ...cvData, customSections: updatedCustoms };
+    setCvData(updated);
+    localStorage.setItem("cvData", JSON.stringify(updated));
+  };
+
+  // Özel Bölüm Madde Değişikliği
+  const handleCustomItemChange = (
+    sectionId: string,
+    itemId: string,
+    field: keyof CustomSectionItem,
+    value: string
+  ) => {
+    const updatedCustoms = cvData.customSections.map((s) => {
+      if (s.id === sectionId) {
+        const updatedItems = s.items.map((item) =>
+          item.id === itemId ? { ...item, [field]: value } : item
+        );
+        return { ...s, items: updatedItems };
+      }
+      return s;
+    });
+
+    const updated = { ...cvData, customSections: updatedCustoms };
+    setCvData(updated);
+    localStorage.setItem("cvData", JSON.stringify(updated));
+  };
+
+  // Profil Fotoğrafı Yükleme
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -187,7 +302,10 @@ export default function Home() {
     }
   };
 
-  const handlePhotoAdjust = (field: "photoZoom" | "photoX" | "photoY", value: number) => {
+  const handlePhotoAdjust = (
+    field: "photoZoom" | "photoX" | "photoY",
+    value: number
+  ) => {
     const updated = { ...cvData, [field]: value };
     setCvData(updated);
     localStorage.setItem("cvData", JSON.stringify(updated));
@@ -199,6 +317,7 @@ export default function Home() {
     localStorage.setItem("cvData", JSON.stringify(updated));
   };
 
+  // Deneyim Yönetimi
   const addExperience = () => {
     const newExp: ExperienceItem = {
       id: Date.now().toString(),
@@ -207,10 +326,7 @@ export default function Home() {
       year: "",
       desc: "",
     };
-    const updated = {
-      ...cvData,
-      experiences: [...cvData.experiences, newExp],
-    };
+    const updated = { ...cvData, experiences: [...cvData.experiences, newExp] };
     setCvData(updated);
     localStorage.setItem("cvData", JSON.stringify(updated));
   };
@@ -233,6 +349,7 @@ export default function Home() {
     localStorage.setItem("cvData", JSON.stringify(updated));
   };
 
+  // Eğitim Yönetimi
   const addEducation = () => {
     const newEdu: EducationItem = {
       id: Date.now().toString(),
@@ -271,13 +388,13 @@ export default function Home() {
   };
 
   // Dinamik A4 Bölüm Renderlayıcı
-  const renderCVSection = (sectionId: string, title: string) => {
-    switch (sectionId) {
+  const renderCVSection = (order: SectionOrder) => {
+    switch (order.type) {
       case "summary":
         return cvData.summary ? (
           <div key="summary" className="mb-6">
             <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
-              {title}
+              Hakkımda
             </h3>
             <p className="text-sm text-slate-700 leading-relaxed">{cvData.summary}</p>
           </div>
@@ -287,7 +404,7 @@ export default function Home() {
         return cvData.skills ? (
           <div key="skills" className="mb-6">
             <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
-              {title}
+              Beceriler
             </h3>
             <div className="flex flex-wrap gap-1.5">
               {cvData.skills.split(",").map((skill, index) => (
@@ -303,7 +420,7 @@ export default function Home() {
         return cvData.experiences.length > 0 ? (
           <div key="experiences" className="mb-6">
             <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">
-              {title}
+              İş Deneyimi
             </h3>
             {cvData.experiences.map((exp) => (
               <div key={exp.id} className="mb-3">
@@ -324,7 +441,7 @@ export default function Home() {
         return cvData.educations.length > 0 ? (
           <div key="educations" className="mb-6">
             <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">
-              {title}
+              Eğitim
             </h3>
             {cvData.educations.map((edu) => (
               <div key={edu.id} className="mb-2">
@@ -338,9 +455,67 @@ export default function Home() {
           </div>
         ) : null;
 
+      case "custom": {
+        const customSec = cvData.customSections.find((s) => s.id === order.id);
+        if (!customSec || customSec.items.length === 0) return null;
+
+        return (
+          <div key={customSec.id} className="mb-6">
+            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">
+              {customSec.sectionTitle || "Özel Bölüm"}
+            </h3>
+            {customSec.items.map((item) => (
+              <div key={item.id} className="mb-2">
+                <div className="flex justify-between items-baseline">
+                  <span className="font-bold text-sm text-slate-800">{item.title}</span>
+                  {item.date && <span className="text-xs text-slate-400">{item.date}</span>}
+                </div>
+                {item.subtitle && (
+                  <div className="text-xs font-medium mb-0.5" style={{ color: cvData.accentColor }}>
+                    {item.subtitle}
+                  </div>
+                )}
+                {item.description && (
+                  <p className="text-xs text-slate-600 leading-normal">{item.description}</p>
+                )}
+              </div>
+            ))}
+          </div>
+        );
+      }
+
       default:
         return null;
     }
+  };
+
+  // Sol panelde ilgili bölüm kartının sağ üstündeki Oklar
+  const SectionHeaderControls = ({ sectionId }: { sectionId: string }) => {
+    const orders = cvData.sectionOrders;
+    const index = orders.findIndex((s) => s.id === sectionId);
+
+    return (
+      <div className="flex items-center gap-1">
+        <button
+          type="button"
+          disabled={index <= 0}
+          onClick={() => moveSection(sectionId, "up")}
+          className="p-1 text-[10px] bg-slate-100 hover:bg-slate-200 rounded text-slate-600 disabled:opacity-30 disabled:cursor-not-allowed"
+          title="Yukarı Taşı"
+        >
+          ▲
+        </button>
+        <button
+          type="button"
+          disabled={index === -1 || index >= orders.length - 1}
+          onClick={() => moveSection(sectionId, "down")}
+          className="p-1 text-[10px] bg-slate-100 hover:bg-slate-200 rounded text-slate-600 disabled:opacity-30 disabled:cursor-not-allowed"
+          title="Aşağı Taşı"
+        >
+          ▼
+        </button>
+      </div>
+    );
   };
 
   return (
@@ -416,44 +591,6 @@ export default function Home() {
                     <span className="text-white text-xs font-bold">✓</span>
                   )}
                 </button>
-              ))}
-            </div>
-          </div>
-
-          {/* BÖLÜM SIRALAMASI YÖNETİMİ */}
-          <div>
-            <h2 className="text-lg font-bold text-slate-800 mb-3 pb-2 border-b">
-              Bölüm Sıralaması & Başlıklar
-            </h2>
-            <div className="space-y-2">
-              {cvData.sections.map((section, idx) => (
-                <div
-                  key={section.id}
-                  className="flex items-center justify-between p-2.5 bg-slate-50 border border-slate-200 rounded-lg"
-                >
-                  <input
-                    type="text"
-                    value={section.title}
-                    onChange={(e) => handleSectionTitleChange(section.id, e.target.value)}
-                    className="text-xs font-bold text-slate-700 bg-transparent border-b border-dashed border-slate-300 focus:outline-none focus:border-blue-500 px-1"
-                  />
-                  <div className="flex gap-1">
-                    <button
-                      disabled={idx === 0}
-                      onClick={() => moveSection(idx, "up")}
-                      className="px-2 py-1 text-xs bg-white border rounded hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed"
-                    >
-                      ▲
-                    </button>
-                    <button
-                      disabled={idx === cvData.sections.length - 1}
-                      onClick={() => moveSection(idx, "down")}
-                      className="px-2 py-1 text-xs bg-white border rounded hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed"
-                    >
-                      ▼
-                    </button>
-                  </div>
-                </div>
               ))}
             </div>
           </div>
@@ -615,8 +752,12 @@ export default function Home() {
                 </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-1">Profil Özeti</label>
+              {/* Hakkımda */}
+              <div className="pt-2">
+                <div className="flex justify-between items-center mb-1">
+                  <label className="block text-xs font-semibold text-slate-600">Profil Özeti (Hakkımda)</label>
+                  <SectionHeaderControls sectionId="summary" />
+                </div>
                 <textarea
                   name="summary"
                   rows={3}
@@ -626,8 +767,12 @@ export default function Home() {
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-1">Beceriler (Virgülle ayırın)</label>
+              {/* Beceriler */}
+              <div className="pt-2">
+                <div className="flex justify-between items-center mb-1">
+                  <label className="block text-xs font-semibold text-slate-600">Beceriler (Virgülle ayırın)</label>
+                  <SectionHeaderControls sectionId="skills" />
+                </div>
                 <input
                   type="text"
                   name="skills"
@@ -642,7 +787,10 @@ export default function Home() {
           {/* İş Deneyimi */}
           <div>
             <div className="flex justify-between items-center mb-4 pb-2 border-b">
-              <h2 className="text-lg font-bold text-slate-800">İş Deneyimi</h2>
+              <div className="flex items-center gap-2">
+                <h2 className="text-lg font-bold text-slate-800">İş Deneyimi</h2>
+                <SectionHeaderControls sectionId="experiences" />
+              </div>
               <button
                 onClick={addExperience}
                 className="text-xs bg-blue-50 hover:bg-blue-100 text-blue-600 font-bold px-3 py-1.5 rounded-lg transition-all"
@@ -698,7 +846,10 @@ export default function Home() {
           {/* Eğitim */}
           <div>
             <div className="flex justify-between items-center mb-4 pb-2 border-b">
-              <h2 className="text-lg font-bold text-slate-800">Eğitim</h2>
+              <div className="flex items-center gap-2">
+                <h2 className="text-lg font-bold text-slate-800">Eğitim</h2>
+                <SectionHeaderControls sectionId="educations" />
+              </div>
               <button
                 onClick={addEducation}
                 className="text-xs bg-blue-50 hover:bg-blue-100 text-blue-600 font-bold px-3 py-1.5 rounded-lg transition-all"
@@ -742,6 +893,94 @@ export default function Home() {
                 </div>
               ))}
             </div>
+          </div>
+
+          {/* KİŞİSELLEŞTİRİLMİŞ ÖZEL BÖLÜMLER (Sertifikalar, Yabancı Dil, Projeler vb.) */}
+          {cvData.customSections.map((sec) => (
+            <div key={sec.id} className="p-4 border border-blue-200 rounded-xl bg-blue-50/30 space-y-4">
+              <div className="flex justify-between items-center pb-2 border-b border-blue-200">
+                <div className="flex items-center gap-2 flex-1 mr-4">
+                  <input
+                    type="text"
+                    value={sec.sectionTitle}
+                    onChange={(e) => handleCustomSectionTitleChange(sec.id, e.target.value)}
+                    placeholder="Bölüm Başlığı (Örn: Sertifikalar)"
+                    className="font-bold text-slate-800 bg-white border border-slate-300 px-2 py-1 rounded text-sm w-full focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  />
+                  <SectionHeaderControls sectionId={sec.id} />
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => addCustomItem(sec.id)}
+                    className="text-xs bg-blue-600 text-white font-semibold px-2.5 py-1 rounded hover:bg-blue-700 transition-all shrink-0"
+                  >
+                    + Madde Ekle
+                  </button>
+                  <button
+                    onClick={() => removeCustomSection(sec.id)}
+                    className="text-xs text-red-600 font-bold hover:underline shrink-0"
+                  >
+                    Bölümü Sil
+                  </button>
+                </div>
+              </div>
+
+              {/* Bölüm İçindeki Maddeler */}
+              <div className="space-y-3">
+                {sec.items.map((item) => (
+                  <div key={item.id} className="p-3 bg-white border border-slate-200 rounded-lg relative space-y-2">
+                    <button
+                      onClick={() => removeCustomItem(sec.id, item.id)}
+                      className="absolute top-2 right-2 text-red-500 hover:text-red-700 text-xs font-bold"
+                    >
+                      ✕
+                    </button>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 pr-6">
+                      <input
+                        type="text"
+                        placeholder="Başlık (Örn: İngilizce / AWS Sertifikası)"
+                        value={item.title}
+                        onChange={(e) => handleCustomItemChange(sec.id, item.id, "title", e.target.value)}
+                        className="border border-slate-300 p-1.5 rounded text-xs w-full"
+                      />
+                      <input
+                        type="text"
+                        placeholder="Alt Başlık / Seviye (Örn: C1 / Ağırlıklı Derece)"
+                        value={item.subtitle}
+                        onChange={(e) => handleCustomItemChange(sec.id, item.id, "subtitle", e.target.value)}
+                        className="border border-slate-300 p-1.5 rounded text-xs w-full"
+                      />
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                      <input
+                        type="text"
+                        placeholder="Tarih / Yıl (İsteğe Bağlı)"
+                        value={item.date}
+                        onChange={(e) => handleCustomItemChange(sec.id, item.id, "date", e.target.value)}
+                        className="border border-slate-300 p-1.5 rounded text-xs w-full"
+                      />
+                      <input
+                        type="text"
+                        placeholder="Kısa Açıklama (İsteğe Bağlı)"
+                        value={item.description}
+                        onChange={(e) => handleCustomItemChange(sec.id, item.id, "description", e.target.value)}
+                        className="border border-slate-300 p-1.5 rounded text-xs w-full"
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+
+          {/* YENİ ÖZEL BÖLÜM EKLE BUTONU */}
+          <div className="pt-2">
+            <button
+              onClick={addCustomSection}
+              className="w-full py-3 border-2 border-dashed border-blue-400 bg-blue-50/50 hover:bg-blue-100/50 text-blue-700 font-bold rounded-xl transition-all flex items-center justify-center gap-2 text-sm shadow-sm"
+            >
+              <span>+ Yeni Özel Bölüm Ekle (Sertifika, Yabancı Dil, Projeler)</span>
+            </button>
           </div>
 
         </section>
@@ -795,9 +1034,7 @@ export default function Home() {
               </div>
 
               {/* Dinamik Bölüm Sıralaması */}
-              {cvData.sections.map((section) =>
-                renderCVSection(section.id, section.title)
-              )}
+              {cvData.sectionOrders.map((order) => renderCVSection(order))}
             </div>
 
             {/* Filigran */}
