@@ -74,6 +74,7 @@ export default function Home() {
   const [cvData, setCvData] = useState<CVData>(initialData);
   const [showPaywall, setShowPaywall] = useState(false);
 
+  // Yerel hafızadan yükleme
   useEffect(() => {
     const savedData = localStorage.getItem("cvData");
     if (savedData) {
@@ -85,6 +86,7 @@ export default function Home() {
     }
   }, []);
 
+  // Form değişikliği
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
@@ -94,6 +96,7 @@ export default function Home() {
     localStorage.setItem("cvData", JSON.stringify(updated));
   };
 
+  // Deneyim Yönetimi
   const addExperience = () => {
     const newExp: ExperienceItem = {
       id: Date.now().toString(),
@@ -128,6 +131,7 @@ export default function Home() {
     localStorage.setItem("cvData", JSON.stringify(updated));
   };
 
+  // Eğitim Yönetimi
   const addEducation = () => {
     const newEdu: EducationItem = {
       id: Date.now().toString(),
@@ -158,16 +162,17 @@ export default function Home() {
     localStorage.setItem("cvData", JSON.stringify(updated));
   };
 
-  const handleDownloadPDF = (isPro: boolean = false) => {
+  // Garantili PDF / Yazdırma Fonksiyonu
+  const handleDownloadPDF = () => {
     setShowPaywall(false);
     setTimeout(() => {
       window.print();
-    }, 100);
+    }, 200);
   };
 
   return (
     <div className="min-h-screen bg-slate-100 flex flex-col font-sans">
-      {/* Baskı özel stili: Baskı alırken sadece CV kısmını gösterir */}
+      {/* Baskı özel CSS kuralları: Sadece CV önizleme alanını basar */}
       <style jsx global>{`
         @media print {
           body * {
@@ -182,7 +187,7 @@ export default function Home() {
             top: 0;
             width: 100%;
             margin: 0;
-            padding: 20px;
+            padding: 24px;
             box-shadow: none !important;
           }
           @page {
@@ -523,7 +528,7 @@ export default function Home() {
                   <p className="text-xs text-slate-500 mt-1">Alt kısımda cvsablon.com filigranı yer alır.</p>
                 </div>
                 <button
-                  onClick={() => handleDownloadPDF(false)}
+                  onClick={handleDownloadPDF}
                   className="mt-4 w-full bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold py-2 rounded-lg text-sm transition-all"
                 >
                   Ücretsiz İndir (PDF Kaydet)
@@ -543,7 +548,7 @@ export default function Home() {
                 <button
                   onClick={() => {
                     alert("iyzico / PayTR Ödeme Sayfasına yönlendiriliyorsunuz (29.90 TL)...");
-                    handleDownloadPDF(true);
+                    handleDownloadPDF();
                   }}
                   className="mt-4 w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg text-sm shadow-md transition-all"
                 >
