@@ -861,10 +861,9 @@ export default function Home() {
   };
 
   // MODERN ŞABLON İÇİN AKILLI DİNAMİK TAŞMA DÜZENLEYİCİSİ
-  // Sol sütunun fiziksel kapasitesini (puan hesabı) ölçer, dolarsa kalanları sağ sütuna aktarır!
   const getModernColumnSplit = () => {
     let currentScore = 0;
-    const MAX_LEFT_SCORE = 12; // Sol sütunun dikey kapasite eşiği
+    const MAX_LEFT_SCORE = 12;
 
     const leftOrders: SectionOrder[] = [];
     const rightOrders: SectionOrder[] = [];
@@ -897,6 +896,10 @@ export default function Home() {
     <div className="min-h-screen bg-slate-100 flex flex-col font-sans">
       <style jsx global>{`
         @media print {
+          * {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
           body * {
             visibility: hidden;
           }
@@ -1272,7 +1275,7 @@ export default function Home() {
               </div>
             )}
 
-            {/* 2️⃣ MODERN 2-KOLONLU ŞABLON DÜZENİ (AKILLI TAŞMA KORUMALI) */}
+            {/* 2️⃣ MODERN 2-KOLONLU ŞABLON DÜZENİ */}
             {cvData.template === "modern" && (
               <div className="flex-1 flex min-h-[842px]">
                 {/* SOL RENKLİ SÜTUN */}
