@@ -17,12 +17,18 @@ interface EducationItem {
   year: string;
 }
 
+interface SectionOrder {
+  id: "summary" | "skills" | "experiences" | "educations";
+  title: string;
+  visible: boolean;
+}
+
 interface CVData {
   photo: string;
   photoZoom: number;
   photoX: number;
   photoY: number;
-  accentColor: string; // Dinamik tema rengi
+  accentColor: string;
   fullName: string;
   title: string;
   email: string;
@@ -32,14 +38,22 @@ interface CVData {
   skills: string;
   experiences: ExperienceItem[];
   educations: EducationItem[];
+  sections: SectionOrder[];
 }
 
 const COLOR_OPTIONS = [
-  { name: "Mavi", value: "#2563eb", border: "border-blue-600", bg: "bg-blue-600" },
-  { name: "Lacivert", value: "#1e3a8a", border: "border-blue-900", bg: "bg-blue-900" },
-  { name: "Zümrüt", value: "#059669", border: "border-emerald-600", bg: "bg-emerald-600" },
-  { name: "Bordo", value: "#9f1239", border: "border-rose-800", bg: "bg-rose-800" },
-  { name: "Asil Siyah", value: "#0f172a", border: "border-slate-900", bg: "bg-slate-900" },
+  { name: "Mavi", value: "#2563eb", bg: "bg-blue-600" },
+  { name: "Lacivert", value: "#1e3a8a", bg: "bg-blue-900" },
+  { name: "Zümrüt", value: "#059669", bg: "bg-emerald-600" },
+  { name: "Bordo", value: "#9f1239", bg: "bg-rose-800" },
+  { name: "Asil Siyah", value: "#0f172a", bg: "bg-slate-900" },
+];
+
+const defaultSections: SectionOrder[] = [
+  { id: "summary", title: "Hakkımda", visible: true },
+  { id: "skills", title: "Beceriler", visible: true },
+  { id: "experiences", title: "İş Deneyimi", visible: true },
+  { id: "educations", title: "Eğitim", visible: true },
 ];
 
 const initialData: CVData = {
@@ -86,6 +100,7 @@ const initialData: CVData = {
       year: "2013 - 2017",
     },
   ],
+  sections: defaultSections,
 };
 
 export default function Home() {
@@ -104,6 +119,7 @@ export default function Home() {
           photoX: parsed.photoX ?? 50,
           photoY: parsed.photoY ?? 0,
           accentColor: parsed.accentColor ?? "#2563eb",
+          sections: parsed.sections || defaultSections,
         });
       } catch (e) {
         console.error("Kayıtlı veri okunamadı", e);
@@ -122,6 +138,31 @@ export default function Home() {
 
   const handleColorChange = (colorValue: string) => {
     const updated = { ...cvData, accentColor: colorValue };
+    setCvData(updated);
+    localStorage.setItem("cvData", JSON.stringify(updated));
+  };
+
+  // Bölüm Sıralamasını Değiştirme (Yukarı / Aşağı)
+  const moveSection = (index: number, direction: "up" | "down") => {
+    const newSections = [...cvData.sections];
+    const targetIndex = direction === "up" ? index - 1 : index + 1;
+
+    if (targetIndex < 0 || targetIndex >= newSections.length) return;
+
+    const [moved] = newSections.splice(index, 1);
+    newSections.splice(targetIndex, 0, moved);
+
+    const updated = { ...cvData, sections: newSections };
+    setCvData(updated);
+    localStorage.setItem("cvData", JSON.stringify(updated));
+  };
+
+  // Bölüm Başlığı Değiştirme
+  const handleSectionTitleChange = (id: string, newTitle: string) => {
+    const updatedSections = cvData.sections.map((sec) =>
+      sec.id === id ? { ...sec, title: newTitle } : sec
+    );
+    const updated = { ...cvData, sections: updatedSections };
     setCvData(updated);
     localStorage.setItem("cvData", JSON.stringify(updated));
   };
@@ -229,6 +270,79 @@ export default function Home() {
     }, 200);
   };
 
+  // Dinamik A4 Bölüm Renderlayıcı
+  const renderCVSection = (sectionId: string, title: string) => {
+    switch (sectionId) {
+      case "summary":
+        return cvData.summary ? (
+          <div key="summary" className="mb-6">
+            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
+              {title}
+            </h3>
+            <p className="text-sm text-slate-700 leading-relaxed">{cvData.summary}</p>
+          </div>
+        ) : null;
+
+      case "skills":
+        return cvData.skills ? (
+          <div key="skills" className="mb-6">
+            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
+              {title}
+            </h3>
+            <div className="flex flex-wrap gap-1.5">
+              {cvData.skills.split(",").map((skill, index) => (
+                <span key={index} className="bg-slate-100 text-slate-700 text-xs px-2.5 py-1 rounded font-medium">
+                  {skill.trim()}
+                </span>
+              ))}
+            </div>
+          </div>
+        ) : null;
+
+      case "experiences":
+        return cvData.experiences.length > 0 ? (
+          <div key="experiences" className="mb-6">
+            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">
+              {title}
+            </h3>
+            {cvData.experiences.map((exp) => (
+              <div key={exp.id} className="mb-3">
+                <div className="flex justify-between items-baseline">
+                  <span className="font-bold text-sm text-slate-800">{exp.role || "Pozisyon"}</span>
+                  <span className="text-xs text-slate-400">{exp.year}</span>
+                </div>
+                <div className="text-xs font-medium mb-1" style={{ color: cvData.accentColor }}>
+                  {exp.company}
+                </div>
+                {exp.desc && <p className="text-xs text-slate-600 leading-normal">{exp.desc}</p>}
+              </div>
+            ))}
+          </div>
+        ) : null;
+
+      case "educations":
+        return cvData.educations.length > 0 ? (
+          <div key="educations" className="mb-6">
+            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">
+              {title}
+            </h3>
+            {cvData.educations.map((edu) => (
+              <div key={edu.id} className="mb-2">
+                <div className="flex justify-between items-baseline">
+                  <span className="font-bold text-sm text-slate-800">{edu.school || "Okul"}</span>
+                  <span className="text-xs text-slate-400">{edu.year}</span>
+                </div>
+                <div className="text-xs text-slate-600">{edu.degree}</div>
+              </div>
+            ))}
+          </div>
+        ) : null;
+
+      default:
+        return null;
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-100 flex flex-col font-sans">
       <style jsx global>{`
@@ -302,6 +416,44 @@ export default function Home() {
                     <span className="text-white text-xs font-bold">✓</span>
                   )}
                 </button>
+              ))}
+            </div>
+          </div>
+
+          {/* BÖLÜM SIRALAMASI YÖNETİMİ */}
+          <div>
+            <h2 className="text-lg font-bold text-slate-800 mb-3 pb-2 border-b">
+              Bölüm Sıralaması & Başlıklar
+            </h2>
+            <div className="space-y-2">
+              {cvData.sections.map((section, idx) => (
+                <div
+                  key={section.id}
+                  className="flex items-center justify-between p-2.5 bg-slate-50 border border-slate-200 rounded-lg"
+                >
+                  <input
+                    type="text"
+                    value={section.title}
+                    onChange={(e) => handleSectionTitleChange(section.id, e.target.value)}
+                    className="text-xs font-bold text-slate-700 bg-transparent border-b border-dashed border-slate-300 focus:outline-none focus:border-blue-500 px-1"
+                  />
+                  <div className="flex gap-1">
+                    <button
+                      disabled={idx === 0}
+                      onClick={() => moveSection(idx, "up")}
+                      className="px-2 py-1 text-xs bg-white border rounded hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed"
+                    >
+                      ▲
+                    </button>
+                    <button
+                      disabled={idx === cvData.sections.length - 1}
+                      onClick={() => moveSection(idx, "down")}
+                      className="px-2 py-1 text-xs bg-white border rounded hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed"
+                    >
+                      ▼
+                    </button>
+                  </div>
+                </div>
               ))}
             </div>
           </div>
@@ -642,64 +794,9 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* Özet */}
-              {cvData.summary && (
-                <div className="mb-6">
-                  <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Hakkımda</h3>
-                  <p className="text-sm text-slate-700 leading-relaxed">{cvData.summary}</p>
-                </div>
-              )}
-
-              {/* Beceriler */}
-              {cvData.skills && (
-                <div className="mb-6">
-                  <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Beceriler</h3>
-                  <div className="flex flex-wrap gap-1.5">
-                    {cvData.skills.split(",").map((skill, index) => (
-                      <span key={index} className="bg-slate-100 text-slate-700 text-xs px-2.5 py-1 rounded font-medium">
-                        {skill.trim()}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Deneyim */}
-              {cvData.experiences.length > 0 && (
-                <div className="mb-6">
-                  <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">İş Deneyimi</h3>
-                  {cvData.experiences.map((exp) => (
-                    <div key={exp.id} className="mb-3">
-                      <div className="flex justify-between items-baseline">
-                        <span className="font-bold text-sm text-slate-800">{exp.role || "Pozisyon"}</span>
-                        <span className="text-xs text-slate-400">{exp.year}</span>
-                      </div>
-                      <div
-                        className="text-xs font-medium mb-1"
-                        style={{ color: cvData.accentColor }}
-                      >
-                        {exp.company}
-                      </div>
-                      {exp.desc && <p className="text-xs text-slate-600 leading-normal">{exp.desc}</p>}
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Eğitim */}
-              {cvData.educations.length > 0 && (
-                <div className="mb-6">
-                  <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Eğitim</h3>
-                  {cvData.educations.map((edu) => (
-                    <div key={edu.id} className="mb-2">
-                      <div className="flex justify-between items-baseline">
-                        <span className="font-bold text-sm text-slate-800">{edu.school || "Okul"}</span>
-                        <span className="text-xs text-slate-400">{edu.year}</span>
-                      </div>
-                      <div className="text-xs text-slate-600">{edu.degree}</div>
-                    </div>
-                  ))}
-                </div>
+              {/* Dinamik Bölüm Sıralaması */}
+              {cvData.sections.map((section) =>
+                renderCVSection(section.id, section.title)
               )}
             </div>
 
