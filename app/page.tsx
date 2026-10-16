@@ -37,7 +37,7 @@ interface SectionOrder {
 }
 
 interface CVData {
-  template: "classic" | "modern"; // Şablon Düzeni Seçeneği
+  template: "classic" | "modern";
   photo: string;
   photoZoom: number;
   photoX: number;
@@ -691,13 +691,18 @@ export default function Home() {
   };
 
   // Sağ A4 Canlı Önizleme Bölümleri (İçerik)
-  const renderCVSection = (order: SectionOrder) => {
+  const renderCVSection = (order: SectionOrder, isDarkBackground = false) => {
     const SectionHeader = ({ title }: { title: string }) => (
-      <div className="mb-3 border-b-2 pb-1 flex items-center justify-between" style={{ borderColor: cvData.template === "modern" ? cvData.accentColor : cvData.accentColor }}>
+      <div
+        className={`mb-3 border-b-2 pb-1 flex items-center justify-between ${
+          isDarkBackground ? "border-white/30" : ""
+        }`}
+        style={{ borderColor: isDarkBackground ? "rgba(255,255,255,0.3)" : cvData.accentColor }}
+      >
         <h3
-          className={`text-xs uppercase tracking-wider font-extrabold text-slate-900 ${
-            cvData.isBoldText ? "font-black text-slate-950" : ""
-          }`}
+          className={`text-xs uppercase tracking-wider font-extrabold ${
+            isDarkBackground ? "text-white" : "text-slate-900"
+          } ${cvData.isBoldText ? "font-black" : ""}`}
         >
           {title}
         </h3>
@@ -709,7 +714,11 @@ export default function Home() {
         return cvData.summary ? (
           <div key="cv_summary" className="mb-6">
             <SectionHeader title="Hakkımda" />
-            <p className={`text-xs text-slate-800 leading-relaxed ${cvData.isBoldText ? "font-medium text-slate-900" : ""}`}>
+            <p
+              className={`text-xs leading-relaxed ${
+                isDarkBackground ? "text-white/90" : "text-slate-800"
+              } ${cvData.isBoldText ? "font-medium" : ""}`}
+            >
               {cvData.summary}
             </p>
           </div>
@@ -723,9 +732,11 @@ export default function Home() {
               {cvData.skills.split(",").map((skill, index) => (
                 <span
                   key={index}
-                  className={`bg-slate-100 border border-slate-200 text-slate-900 text-xs px-2.5 py-1 rounded ${
-                    cvData.isBoldText ? "font-bold bg-slate-200" : "font-semibold"
-                  }`}
+                  className={`text-xs px-2.5 py-1 rounded ${
+                    isDarkBackground
+                      ? "bg-white/20 text-white border border-white/30 font-semibold"
+                      : "bg-slate-100 border border-slate-200 text-slate-900 font-semibold"
+                  } ${cvData.isBoldText ? "font-bold" : ""}`}
                 >
                   {skill.trim()}
                 </span>
@@ -741,19 +752,29 @@ export default function Home() {
             {cvData.experiences.map((exp) => (
               <div key={exp.id} className="mb-3">
                 <div className="flex justify-between items-baseline">
-                  <span className={`text-sm text-slate-900 ${cvData.isBoldText ? "font-extrabold" : "font-bold"}`}>
+                  <span
+                    className={`text-sm ${
+                      isDarkBackground ? "text-white" : "text-slate-900"
+                    } ${cvData.isBoldText ? "font-extrabold" : "font-bold"}`}
+                  >
                     {exp.role || "Pozisyon"}
                   </span>
-                  <span className="text-xs font-semibold text-slate-500">{exp.year}</span>
+                  <span className={`text-xs font-semibold ${isDarkBackground ? "text-white/70" : "text-slate-500"}`}>
+                    {exp.year}
+                  </span>
                 </div>
                 <div
                   className={`text-xs mb-1 ${cvData.isBoldText ? "font-bold" : "font-semibold"}`}
-                  style={{ color: cvData.accentColor }}
+                  style={{ color: isDarkBackground ? "#ffffff" : cvData.accentColor }}
                 >
                   {exp.company}
                 </div>
                 {exp.desc && (
-                  <p className={`text-xs text-slate-700 leading-normal ${cvData.isBoldText ? "font-medium" : ""}`}>
+                  <p
+                    className={`text-xs leading-normal ${
+                      isDarkBackground ? "text-white/80" : "text-slate-700"
+                    } ${cvData.isBoldText ? "font-medium" : ""}`}
+                  >
                     {exp.desc}
                   </p>
                 )}
@@ -769,12 +790,18 @@ export default function Home() {
             {cvData.educations.map((edu) => (
               <div key={edu.id} className="mb-2">
                 <div className="flex justify-between items-baseline">
-                  <span className={`text-sm text-slate-900 ${cvData.isBoldText ? "font-extrabold" : "font-bold"}`}>
+                  <span
+                    className={`text-sm ${
+                      isDarkBackground ? "text-white" : "text-slate-900"
+                    } ${cvData.isBoldText ? "font-extrabold" : "font-bold"}`}
+                  >
                     {edu.school || "Okul"}
                   </span>
-                  <span className="text-xs font-semibold text-slate-500">{edu.year}</span>
+                  <span className={`text-xs font-semibold ${isDarkBackground ? "text-white/70" : "text-slate-500"}`}>
+                    {edu.year}
+                  </span>
                 </div>
-                <div className={`text-xs text-slate-700 ${cvData.isBoldText ? "font-semibold" : ""}`}>
+                <div className={`text-xs ${isDarkBackground ? "text-white/80" : "text-slate-700"} ${cvData.isBoldText ? "font-semibold" : ""}`}>
                   {edu.degree}
                 </div>
               </div>
@@ -792,21 +819,33 @@ export default function Home() {
             {customSec.items.map((item) => (
               <div key={item.id} className="mb-2">
                 <div className="flex justify-between items-baseline">
-                  <span className={`text-sm text-slate-900 ${cvData.isBoldText ? "font-extrabold" : "font-bold"}`}>
+                  <span
+                    className={`text-sm ${
+                      isDarkBackground ? "text-white" : "text-slate-900"
+                    } ${cvData.isBoldText ? "font-extrabold" : "font-bold"}`}
+                  >
                     {item.title}
                   </span>
-                  {item.date && <span className="text-xs font-semibold text-slate-500">{item.date}</span>}
+                  {item.date && (
+                    <span className={`text-xs font-semibold ${isDarkBackground ? "text-white/70" : "text-slate-500"}`}>
+                      {item.date}
+                    </span>
+                  )}
                 </div>
                 {item.subtitle && (
                   <div
                     className={`text-xs mb-0.5 ${cvData.isBoldText ? "font-bold" : "font-semibold"}`}
-                    style={{ color: cvData.accentColor }}
+                    style={{ color: isDarkBackground ? "#ffffff" : cvData.accentColor }}
                   >
                     {item.subtitle}
                   </div>
                 )}
                 {item.description && (
-                  <p className={`text-xs text-slate-700 leading-normal ${cvData.isBoldText ? "font-medium" : ""}`}>
+                  <p
+                    className={`text-xs leading-normal ${
+                      isDarkBackground ? "text-white/80" : "text-slate-700"
+                    } ${cvData.isBoldText ? "font-medium" : ""}`}
+                  >
                     {item.description}
                   </p>
                 )}
@@ -820,6 +859,16 @@ export default function Home() {
         return null;
     }
   };
+
+  // Modern Şablonda Sol Sütuna Gidecek Bölümler (Beceriler, Eğitim ve Özel Bölümler)
+  const modernLeftOrders = cvData.sectionOrders.filter(
+    (o) => o.type === "skills" || o.type === "educations" || o.type === "custom"
+  );
+
+  // Modern Şablonda Sağ Sütunda Kalacak Bölümler (Hakkımda, İş Deneyimi)
+  const modernRightOrders = cvData.sectionOrders.filter(
+    (o) => o.type === "summary" || o.type === "experiences"
+  );
 
   return (
     <div className="min-h-screen bg-slate-100 flex flex-col font-sans">
@@ -1200,7 +1249,7 @@ export default function Home() {
               </div>
             )}
 
-            {/* 2️⃣ MODERN 2-KOLONLU ŞABLON DÜZENİ */}
+            {/* 2️⃣ MODERN 2-KOLONLU ŞABLON DÜZENİ (DOLU SÜTUN KUSURSUZ TASARIM) */}
             {cvData.template === "modern" && (
               <div className="flex-1 flex min-h-[842px]">
                 {/* SOL RENKLİ SÜTUN */}
@@ -1232,10 +1281,15 @@ export default function Home() {
                       </p>
                     </div>
 
-                    <div className="border-t border-white/20 pt-4 space-y-2.5 text-xs font-medium text-white/90">
+                    <div className="border-t border-white/20 pt-4 mb-6 space-y-2.5 text-xs font-medium text-white/90">
                       {cvData.email && <div className="break-all">📧 {cvData.email}</div>}
                       {cvData.phone && <div>📞 {cvData.phone}</div>}
                       {cvData.location && <div>📍 {cvData.location}</div>}
+                    </div>
+
+                    {/* SOL SÜTUNA DİNAMİK YERLEŞEN BÖLÜMLER (Beceriler, Eğitim, Özel Bölümler) */}
+                    <div className="space-y-4 pt-2 border-t border-white/20">
+                      {modernLeftOrders.map((order) => renderCVSection(order, true))}
                     </div>
                   </div>
 
@@ -1244,10 +1298,10 @@ export default function Home() {
                   </div>
                 </div>
 
-                {/* SAĞ BEYAZ İÇERİK SÜTÜNU */}
+                {/* SAĞ BEYAZ İÇERİK SÜTÜNU (Hakkımda & İş Deneyimleri) */}
                 <div className="w-3/5 p-6 flex flex-col justify-between bg-white">
                   <div>
-                    {cvData.sectionOrders.map((order) => renderCVSection(order))}
+                    {modernRightOrders.map((order) => renderCVSection(order, false))}
                   </div>
 
                   <div className="border-t pt-2 text-right text-[9px] text-slate-400 font-semibold">
