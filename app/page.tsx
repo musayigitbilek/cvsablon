@@ -32,7 +32,7 @@ interface EducationItem {
 }
 
 interface SectionOrder {
-  id: string; // 'summary' | 'skills' | 'experiences' | 'educations' | customSection id
+  id: string;
   type: "summary" | "skills" | "experiences" | "educations" | "custom";
 }
 
@@ -42,6 +42,7 @@ interface CVData {
   photoX: number;
   photoY: number;
   accentColor: string;
+  isBoldText: boolean; // Metin koyuluk / kalınlık tercihi
   fullName: string;
   title: string;
   email: string;
@@ -76,6 +77,7 @@ const initialData: CVData = {
   photoX: 50,
   photoY: 0,
   accentColor: "#2563eb",
+  isBoldText: true, // Varsayılan olarak net ve koyu font
   fullName: "Ahmet Yılmaz",
   title: "Kıdemli Yazılım Geliştirici",
   email: "ahmet@example.com",
@@ -132,6 +134,7 @@ export default function Home() {
           ...parsed,
           customSections: parsed.customSections || [],
           sectionOrders: parsed.sectionOrders || defaultSectionOrders,
+          isBoldText: parsed.isBoldText ?? true,
         });
       } catch (e) {
         console.error("Kayıtlı veri okunamadı", e);
@@ -154,7 +157,12 @@ export default function Home() {
     localStorage.setItem("cvData", JSON.stringify(updated));
   };
 
-  // Bölüm Sıralama Okları (Senkron Çalışır)
+  const toggleBoldText = () => {
+    const updated = { ...cvData, isBoldText: !cvData.isBoldText };
+    setCvData(updated);
+    localStorage.setItem("cvData", JSON.stringify(updated));
+  };
+
   const moveSection = (sectionId: string, direction: "up" | "down") => {
     const orders = [...cvData.sectionOrders];
     const index = orders.findIndex((s) => s.id === sectionId);
@@ -171,7 +179,6 @@ export default function Home() {
     localStorage.setItem("cvData", JSON.stringify(updated));
   };
 
-  // Özel Bölüm Ekleme
   const addCustomSection = () => {
     const newId = "custom_" + Date.now();
     const newSection: CustomSection = {
@@ -276,7 +283,6 @@ export default function Home() {
     localStorage.setItem("cvData", JSON.stringify(updated));
   };
 
-  // Fotoğraf Kontrolleri
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -312,7 +318,6 @@ export default function Home() {
     localStorage.setItem("cvData", JSON.stringify(updated));
   };
 
-  // Deneyim Yönetimi
   const addExperience = () => {
     const newExp: ExperienceItem = {
       id: Date.now().toString(),
@@ -344,7 +349,6 @@ export default function Home() {
     localStorage.setItem("cvData", JSON.stringify(updated));
   };
 
-  // Eğitim Yönetimi
   const addEducation = () => {
     const newEdu: EducationItem = {
       id: Date.now().toString(),
@@ -382,7 +386,6 @@ export default function Home() {
     }, 200);
   };
 
-  // Başlık Yanı Ok Butonları
   const SectionHeaderControls = ({ sectionId }: { sectionId: string }) => {
     const orders = cvData.sectionOrders;
     const index = orders.findIndex((s) => s.id === sectionId);
@@ -411,7 +414,7 @@ export default function Home() {
     );
   };
 
-  // 1️⃣ SOL FORM DİNAMİK RENDER SİSTEMİ (SENKRONİZE)
+  // Sol Form Render
   const renderFormSection = (order: SectionOrder) => {
     switch (order.type) {
       case "summary":
@@ -649,28 +652,44 @@ export default function Home() {
     }
   };
 
-  // 2️⃣ SAĞ A4 CANLI DİNAMİK RENDER SİSTEMİ (SENKRONİZE)
+  // Sağ A4 Canlı Önizleme Render (NET, BOLD, KOYU BAŞLIKLAR)
   const renderCVSection = (order: SectionOrder) => {
+    // Ortak Bölüm Başlığı Bileşeni (Koyu ve Belirgin)
+    const SectionHeader = ({ title }: { title: string }) => (
+      <div className="mb-3 border-b-2 pb-1 flex items-center justify-between" style={{ borderColor: cvData.accentColor }}>
+        <h3
+          className={`text-xs uppercase tracking-wider font-extrabold text-slate-900 ${
+            cvData.isBoldText ? "font-black text-slate-950" : ""
+          }`}
+        >
+          {title}
+        </h3>
+      </div>
+    );
+
     switch (order.type) {
       case "summary":
         return cvData.summary ? (
           <div key="cv_summary" className="mb-6">
-            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
-              Hakkımda
-            </h3>
-            <p className="text-sm text-slate-700 leading-relaxed">{cvData.summary}</p>
+            <SectionHeader title="Hakkımda" />
+            <p className={`text-xs text-slate-800 leading-relaxed ${cvData.isBoldText ? "font-medium text-slate-900" : ""}`}>
+              {cvData.summary}
+            </p>
           </div>
         ) : null;
 
       case "skills":
         return cvData.skills ? (
           <div key="cv_skills" className="mb-6">
-            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
-              Beceriler
-            </h3>
+            <SectionHeader title="Beceriler" />
             <div className="flex flex-wrap gap-1.5">
               {cvData.skills.split(",").map((skill, index) => (
-                <span key={index} className="bg-slate-100 text-slate-700 text-xs px-2.5 py-1 rounded font-medium">
+                <span
+                  key={index}
+                  className={`bg-slate-100 border border-slate-200 text-slate-900 text-xs px-2.5 py-1 rounded ${
+                    cvData.isBoldText ? "font-bold bg-slate-200" : "font-semibold"
+                  }`}
+                >
                   {skill.trim()}
                 </span>
               ))}
@@ -681,19 +700,26 @@ export default function Home() {
       case "experiences":
         return cvData.experiences.length > 0 ? (
           <div key="cv_experiences" className="mb-6">
-            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">
-              İş Deneyimi
-            </h3>
+            <SectionHeader title="İş Deneyimi" />
             {cvData.experiences.map((exp) => (
               <div key={exp.id} className="mb-3">
                 <div className="flex justify-between items-baseline">
-                  <span className="font-bold text-sm text-slate-800">{exp.role || "Pozisyon"}</span>
-                  <span className="text-xs text-slate-400">{exp.year}</span>
+                  <span className={`text-sm text-slate-900 ${cvData.isBoldText ? "font-extrabold" : "font-bold"}`}>
+                    {exp.role || "Pozisyon"}
+                  </span>
+                  <span className="text-xs font-semibold text-slate-500">{exp.year}</span>
                 </div>
-                <div className="text-xs font-medium mb-1" style={{ color: cvData.accentColor }}>
+                <div
+                  className={`text-xs mb-1 ${cvData.isBoldText ? "font-bold" : "font-semibold"}`}
+                  style={{ color: cvData.accentColor }}
+                >
                   {exp.company}
                 </div>
-                {exp.desc && <p className="text-xs text-slate-600 leading-normal">{exp.desc}</p>}
+                {exp.desc && (
+                  <p className={`text-xs text-slate-700 leading-normal ${cvData.isBoldText ? "font-medium" : ""}`}>
+                    {exp.desc}
+                  </p>
+                )}
               </div>
             ))}
           </div>
@@ -702,16 +728,18 @@ export default function Home() {
       case "educations":
         return cvData.educations.length > 0 ? (
           <div key="cv_educations" className="mb-6">
-            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">
-              Eğitim
-            </h3>
+            <SectionHeader title="Eğitim" />
             {cvData.educations.map((edu) => (
               <div key={edu.id} className="mb-2">
                 <div className="flex justify-between items-baseline">
-                  <span className="font-bold text-sm text-slate-800">{edu.school || "Okul"}</span>
-                  <span className="text-xs text-slate-400">{edu.year}</span>
+                  <span className={`text-sm text-slate-900 ${cvData.isBoldText ? "font-extrabold" : "font-bold"}`}>
+                    {edu.school || "Okul"}
+                  </span>
+                  <span className="text-xs font-semibold text-slate-500">{edu.year}</span>
                 </div>
-                <div className="text-xs text-slate-600">{edu.degree}</div>
+                <div className={`text-xs text-slate-700 ${cvData.isBoldText ? "font-semibold" : ""}`}>
+                  {edu.degree}
+                </div>
               </div>
             ))}
           </div>
@@ -723,22 +751,27 @@ export default function Home() {
 
         return (
           <div key={customSec.id} className="mb-6">
-            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">
-              {customSec.sectionTitle || "Özel Bölüm"}
-            </h3>
+            <SectionHeader title={customSec.sectionTitle || "Özel Bölüm"} />
             {customSec.items.map((item) => (
               <div key={item.id} className="mb-2">
                 <div className="flex justify-between items-baseline">
-                  <span className="font-bold text-sm text-slate-800">{item.title}</span>
-                  {item.date && <span className="text-xs text-slate-400">{item.date}</span>}
+                  <span className={`text-sm text-slate-900 ${cvData.isBoldText ? "font-extrabold" : "font-bold"}`}>
+                    {item.title}
+                  </span>
+                  {item.date && <span className="text-xs font-semibold text-slate-500">{item.date}</span>}
                 </div>
                 {item.subtitle && (
-                  <div className="text-xs font-medium mb-0.5" style={{ color: cvData.accentColor }}>
+                  <div
+                    className={`text-xs mb-0.5 ${cvData.isBoldText ? "font-bold" : "font-semibold"}`}
+                    style={{ color: cvData.accentColor }}
+                  >
                     {item.subtitle}
                   </div>
                 )}
                 {item.description && (
-                  <p className="text-xs text-slate-600 leading-normal">{item.description}</p>
+                  <p className={`text-xs text-slate-700 leading-normal ${cvData.isBoldText ? "font-medium" : ""}`}>
+                    {item.description}
+                  </p>
                 )}
               </div>
             ))}
@@ -803,28 +836,48 @@ export default function Home() {
         {/* SOL FORM */}
         <section className="bg-white rounded-xl p-6 shadow-sm border border-slate-200 overflow-y-auto max-h-[calc(100vh-120px)] space-y-6 print:hidden">
           
-          {/* TEMA RENGİ SEÇİMİ */}
-          <div>
-            <h2 className="text-sm font-bold text-slate-800 mb-3 pb-2 border-b flex justify-between items-center">
-              <span>Şablon Vurgu Rengi</span>
-            </h2>
-            <div className="flex items-center gap-3">
-              {COLOR_OPTIONS.map((color) => (
+          {/* TEMA RENGİ VE METİN KALINLIĞI SEÇİMİ */}
+          <div className="p-4 border border-slate-200 rounded-xl bg-slate-50 space-y-3">
+            <div className="flex flex-wrap justify-between items-center gap-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-800 mb-2">
+                  Şablon Vurgu Rengi
+                </label>
+                <div className="flex items-center gap-2.5">
+                  {COLOR_OPTIONS.map((color) => (
+                    <button
+                      key={color.value}
+                      onClick={() => handleColorChange(color.value)}
+                      className={`w-7 h-7 rounded-full ${color.bg} flex items-center justify-center transition-all ${
+                        cvData.accentColor === color.value
+                          ? "ring-4 ring-slate-300 scale-110 shadow-md"
+                          : "opacity-80 hover:opacity-100"
+                      }`}
+                      title={color.name}
+                    >
+                      {cvData.accentColor === color.value && (
+                        <span className="text-white text-[10px] font-bold">✓</span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-800 mb-2">
+                  Metin Görünümü (Font Koyu/Bold)
+                </label>
                 <button
-                  key={color.value}
-                  onClick={() => handleColorChange(color.value)}
-                  className={`w-8 h-8 rounded-full ${color.bg} flex items-center justify-center transition-all ${
-                    cvData.accentColor === color.value
-                      ? "ring-4 ring-slate-300 scale-110 shadow-md"
-                      : "opacity-80 hover:opacity-100"
+                  onClick={toggleBoldText}
+                  className={`px-3 py-1.5 text-xs font-bold rounded-lg border transition-all ${
+                    cvData.isBoldText
+                      ? "bg-slate-900 text-white border-slate-900 shadow-sm"
+                      : "bg-white text-slate-700 border-slate-300 hover:bg-slate-100"
                   }`}
-                  title={color.name}
                 >
-                  {cvData.accentColor === color.value && (
-                    <span className="text-white text-xs font-bold">✓</span>
-                  )}
+                  {cvData.isBoldText ? "✓ Koyu / Bold Modu Açık" : "Normal Mod"}
                 </button>
-              ))}
+              </div>
             </div>
           </div>
 
@@ -1006,7 +1059,7 @@ export default function Home() {
         <section className="bg-slate-200 rounded-xl p-6 shadow-inner flex justify-center items-start overflow-y-auto max-h-[calc(100vh-120px)] print:bg-white print:p-0 print:max-h-none">
           <div
             id="printable-cv"
-            className="bg-white w-full max-w-[595px] min-h-[842px] p-8 shadow-xl rounded-sm flex flex-col justify-between text-slate-800 relative"
+            className="bg-white w-full max-w-[595px] min-h-[842px] p-8 shadow-xl rounded-sm flex flex-col justify-between text-slate-900 relative"
           >
             <div>
               {/* Header */}
@@ -1032,17 +1085,17 @@ export default function Home() {
                   </div>
                 )}
                 <div className="flex-1">
-                  <h1 className="text-2xl font-bold text-slate-900 uppercase tracking-wide">
+                  <h1 className="text-2xl font-black text-slate-950 uppercase tracking-wide">
                     {cvData.fullName || "Adınız Soyadınız"}
                   </h1>
                   <p
-                    className="font-semibold text-md"
+                    className="font-extrabold text-md"
                     style={{ color: cvData.accentColor }}
                   >
                     {cvData.title || "Unvanınız"}
                   </p>
                   
-                  <div className="flex flex-wrap gap-4 text-xs text-slate-500 mt-3">
+                  <div className="flex flex-wrap gap-4 text-xs font-semibold text-slate-700 mt-3">
                     {cvData.email && <span>📧 {cvData.email}</span>}
                     {cvData.phone && <span>📞 {cvData.phone}</span>}
                     {cvData.location && <span>📍 {cvData.location}</span>}
@@ -1050,12 +1103,12 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* Dinamik Bölüm Sıralaması (SENKRONİZE) */}
+              {/* Dinamik Bölüm Sıralaması */}
               {cvData.sectionOrders.map((order) => renderCVSection(order))}
             </div>
 
             {/* Filigran */}
-            <div className="border-t pt-3 text-center text-[10px] text-slate-400 flex justify-between items-center">
+            <div className="border-t pt-3 text-center text-[10px] text-slate-500 font-semibold flex justify-between items-center">
               <span>Hazırlayan: CVSablon.com</span>
               <span>Sayfa 1 / 1</span>
             </div>
