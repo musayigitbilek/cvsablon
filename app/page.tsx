@@ -20,8 +20,9 @@ interface EducationItem {
 interface CVData {
   photo: string;
   photoZoom: number;
-  photoX: number; // 0% - 100%
-  photoY: number; // 0% - 100%
+  photoX: number;
+  photoY: number;
+  accentColor: string; // Dinamik tema rengi
   fullName: string;
   title: string;
   email: string;
@@ -33,11 +34,20 @@ interface CVData {
   educations: EducationItem[];
 }
 
+const COLOR_OPTIONS = [
+  { name: "Mavi", value: "#2563eb", border: "border-blue-600", bg: "bg-blue-600" },
+  { name: "Lacivert", value: "#1e3a8a", border: "border-blue-900", bg: "bg-blue-900" },
+  { name: "Zümrüt", value: "#059669", border: "border-emerald-600", bg: "bg-emerald-600" },
+  { name: "Bordo", value: "#9f1239", border: "border-rose-800", bg: "bg-rose-800" },
+  { name: "Asil Siyah", value: "#0f172a", border: "border-slate-900", bg: "bg-slate-900" },
+];
+
 const initialData: CVData = {
   photo: "",
   photoZoom: 100,
-  photoX: 50, // Tam Ortada (%50)
-  photoY: 0,  // Doğrudan üst odak (%0) - Kafa kesilmesini önler
+  photoX: 50,
+  photoY: 0,
+  accentColor: "#2563eb",
   fullName: "Ahmet Yılmaz",
   title: "Kıdemli Yazılım Geliştirici",
   email: "ahmet@example.com",
@@ -93,6 +103,7 @@ export default function Home() {
           photoZoom: parsed.photoZoom ?? 100,
           photoX: parsed.photoX ?? 50,
           photoY: parsed.photoY ?? 0,
+          accentColor: parsed.accentColor ?? "#2563eb",
         });
       } catch (e) {
         console.error("Kayıtlı veri okunamadı", e);
@@ -109,6 +120,12 @@ export default function Home() {
     localStorage.setItem("cvData", JSON.stringify(updated));
   };
 
+  const handleColorChange = (colorValue: string) => {
+    const updated = { ...cvData, accentColor: colorValue };
+    setCvData(updated);
+    localStorage.setItem("cvData", JSON.stringify(updated));
+  };
+
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -120,7 +137,7 @@ export default function Home() {
           photo: base64Photo,
           photoZoom: 100,
           photoX: 50,
-          photoY: 0, // Yüzün doğrudan üstte görünmesi için varsayılan %0
+          photoY: 0,
         };
         setCvData(updated);
         localStorage.setItem("cvData", JSON.stringify(updated));
@@ -264,6 +281,32 @@ export default function Home() {
         {/* SOL FORM */}
         <section className="bg-white rounded-xl p-6 shadow-sm border border-slate-200 overflow-y-auto max-h-[calc(100vh-120px)] space-y-8 print:hidden">
           
+          {/* TEMA RENGİ SEÇİMİ */}
+          <div>
+            <h2 className="text-lg font-bold text-slate-800 mb-3 pb-2 border-b flex justify-between items-center">
+              <span>Şablon Vurgu Rengi</span>
+            </h2>
+            <div className="flex items-center gap-3">
+              {COLOR_OPTIONS.map((color) => (
+                <button
+                  key={color.value}
+                  onClick={() => handleColorChange(color.value)}
+                  className={`w-9 h-9 rounded-full ${color.bg} flex items-center justify-center transition-all ${
+                    cvData.accentColor === color.value
+                      ? "ring-4 ring-slate-300 scale-110 shadow-md"
+                      : "opacity-80 hover:opacity-100"
+                  }`}
+                  title={color.name}
+                >
+                  {cvData.accentColor === color.value && (
+                    <span className="text-white text-xs font-bold">✓</span>
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Kişisel Bilgiler & Fotoğraf */}
           <div>
             <h2 className="text-lg font-bold text-slate-800 mb-4 pb-2 border-b">
               Kişisel Bilgiler
@@ -273,7 +316,7 @@ export default function Home() {
             <div className="mb-6 p-4 border border-dashed border-slate-300 rounded-xl bg-slate-50 space-y-4">
               <div className="flex items-center gap-4">
                 {cvData.photo ? (
-                  <div className="relative w-20 h-20 rounded-full overflow-hidden border-2 border-blue-600 shrink-0 bg-slate-200">
+                  <div className="relative w-20 h-20 rounded-full overflow-hidden border-2 shrink-0 bg-slate-200" style={{ borderColor: cvData.accentColor }}>
                     <img
                       src={cvData.photo}
                       alt="Profil"
@@ -559,10 +602,16 @@ export default function Home() {
           >
             <div>
               {/* Header */}
-              <div className="border-b-2 border-blue-600 pb-4 mb-6 flex items-start gap-5">
+              <div
+                className="pb-4 mb-6 flex items-start gap-5 border-b-2"
+                style={{ borderColor: cvData.accentColor }}
+              >
                 {/* Profil Resmi Var İse Göster */}
                 {cvData.photo && (
-                  <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-blue-600 shrink-0 shadow-sm bg-slate-100 relative">
+                  <div
+                    className="w-24 h-24 rounded-full overflow-hidden border-2 shrink-0 shadow-sm bg-slate-100 relative"
+                    style={{ borderColor: cvData.accentColor }}
+                  >
                     <img
                       src={cvData.photo}
                       alt={cvData.fullName}
@@ -578,7 +627,12 @@ export default function Home() {
                   <h1 className="text-2xl font-bold text-slate-900 uppercase tracking-wide">
                     {cvData.fullName || "Adınız Soyadınız"}
                   </h1>
-                  <p className="text-blue-600 font-semibold text-md">{cvData.title || "Unvanınız"}</p>
+                  <p
+                    className="font-semibold text-md"
+                    style={{ color: cvData.accentColor }}
+                  >
+                    {cvData.title || "Unvanınız"}
+                  </p>
                   
                   <div className="flex flex-wrap gap-4 text-xs text-slate-500 mt-3">
                     {cvData.email && <span>📧 {cvData.email}</span>}
@@ -620,7 +674,12 @@ export default function Home() {
                         <span className="font-bold text-sm text-slate-800">{exp.role || "Pozisyon"}</span>
                         <span className="text-xs text-slate-400">{exp.year}</span>
                       </div>
-                      <div className="text-xs text-blue-600 font-medium mb-1">{exp.company}</div>
+                      <div
+                        className="text-xs font-medium mb-1"
+                        style={{ color: cvData.accentColor }}
+                      >
+                        {exp.company}
+                      </div>
                       {exp.desc && <p className="text-xs text-slate-600 leading-normal">{exp.desc}</p>}
                     </div>
                   ))}
