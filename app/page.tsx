@@ -860,15 +860,38 @@ export default function Home() {
     }
   };
 
-  // Modern Şablonda Sol Sütuna Gidecek Bölümler (Beceriler, Eğitim ve Özel Bölümler)
-  const modernLeftOrders = cvData.sectionOrders.filter(
-    (o) => o.type === "skills" || o.type === "educations" || o.type === "custom"
-  );
+  // MODERN ŞABLON İÇİN AKILLI DİNAMİK TAŞMA DÜZENLEYİCİSİ
+  // Sol sütunun fiziksel kapasitesini (puan hesabı) ölçer, dolarsa kalanları sağ sütuna aktarır!
+  const getModernColumnSplit = () => {
+    let currentScore = 0;
+    const MAX_LEFT_SCORE = 12; // Sol sütunun dikey kapasite eşiği
 
-  // Modern Şablonda Sağ Sütunda Kalacak Bölümler (Hakkımda, İş Deneyimi)
-  const modernRightOrders = cvData.sectionOrders.filter(
-    (o) => o.type === "summary" || o.type === "experiences"
-  );
+    const leftOrders: SectionOrder[] = [];
+    const rightOrders: SectionOrder[] = [];
+
+    cvData.sectionOrders.forEach((order) => {
+      let score = 0;
+      if (order.type === "skills" && cvData.skills) score = 3;
+      else if (order.type === "summary" && cvData.summary) score = 4;
+      else if (order.type === "educations") score = Math.max(2, cvData.educations.length * 2.5);
+      else if (order.type === "experiences") score = Math.max(3, cvData.experiences.length * 3.5);
+      else if (order.type === "custom") {
+        const sec = cvData.customSections.find((s) => s.id === order.id);
+        score = sec ? Math.max(2, sec.items.length * 2) : 0;
+      }
+
+      if (currentScore + score <= MAX_LEFT_SCORE) {
+        leftOrders.push(order);
+        currentScore += score;
+      } else {
+        rightOrders.push(order);
+      }
+    });
+
+    return { leftOrders, rightOrders };
+  };
+
+  const { leftOrders: modernLeftOrders, rightOrders: modernRightOrders } = getModernColumnSplit();
 
   return (
     <div className="min-h-screen bg-slate-100 flex flex-col font-sans">
@@ -1249,7 +1272,7 @@ export default function Home() {
               </div>
             )}
 
-            {/* 2️⃣ MODERN 2-KOLONLU ŞABLON DÜZENİ (DOLU SÜTUN KUSURSUZ TASARIM) */}
+            {/* 2️⃣ MODERN 2-KOLONLU ŞABLON DÜZENİ (AKILLI TAŞMA KORUMALI) */}
             {cvData.template === "modern" && (
               <div className="flex-1 flex min-h-[842px]">
                 {/* SOL RENKLİ SÜTUN */}
@@ -1287,7 +1310,7 @@ export default function Home() {
                       {cvData.location && <div>📍 {cvData.location}</div>}
                     </div>
 
-                    {/* SOL SÜTUNA DİNAMİK YERLEŞEN BÖLÜMLER (Beceriler, Eğitim, Özel Bölümler) */}
+                    {/* SOL SÜTUNA DİNAMİK YERLEŞEN BÖLÜMLER */}
                     <div className="space-y-4 pt-2 border-t border-white/20">
                       {modernLeftOrders.map((order) => renderCVSection(order, true))}
                     </div>
@@ -1298,7 +1321,7 @@ export default function Home() {
                   </div>
                 </div>
 
-                {/* SAĞ BEYAZ İÇERİK SÜTÜNU (Hakkımda & İş Deneyimleri) */}
+                {/* SAĞ BEYAZ İÇERİK SÜTÜNU */}
                 <div className="w-3/5 p-6 flex flex-col justify-between bg-white">
                   <div>
                     {modernRightOrders.map((order) => renderCVSection(order, false))}
