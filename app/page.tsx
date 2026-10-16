@@ -18,6 +18,7 @@ interface EducationItem {
 }
 
 interface CVData {
+  photo: string;
   fullName: string;
   title: string;
   email: string;
@@ -30,6 +31,7 @@ interface CVData {
 }
 
 const initialData: CVData = {
+  photo: "",
   fullName: "Ahmet Yılmaz",
   title: "Kıdemli Yazılım Geliştirici",
   email: "ahmet@example.com",
@@ -92,6 +94,28 @@ export default function Home() {
   ) => {
     const { name, value } = e.target;
     const updated = { ...cvData, [name]: value };
+    setCvData(updated);
+    localStorage.setItem("cvData", JSON.stringify(updated));
+  };
+
+  // Fotoğraf Yükleme İşlemi (Base64)
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64Photo = reader.result as string;
+        const updated = { ...cvData, photo: base64Photo };
+        setCvData(updated);
+        localStorage.setItem("cvData", JSON.stringify(updated));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Fotoğrafı Silme
+  const removePhoto = () => {
+    const updated = { ...cvData, photo: "" };
     setCvData(updated);
     localStorage.setItem("cvData", JSON.stringify(updated));
   };
@@ -198,14 +222,13 @@ export default function Home() {
       `}</style>
 
       {/* Header */}
-      <header className="bg-white border-b border-slate-200 px-6 py-4 flex justify-between items-center sticky top-0 z-10 shadow-sm print:hidden">
+      <header className="bg-white border-b border-slate-200 px-6 py-3 flex justify-between items-center sticky top-0 z-10 shadow-sm print:hidden">
         <div className="flex items-center gap-2">
-          <div className="bg-blue-600 text-white p-2 rounded-lg font-bold text-xl">
-            CV
-          </div>
-          <span className="font-bold text-xl text-slate-800 tracking-tight">
-            CVSablon<span className="text-blue-600">.com</span>
-          </span>
+          <img
+            src="/logo.png"
+            alt="CVSablon.com Logo"
+            className="h-10 w-auto object-contain"
+          />
         </div>
         <button
           onClick={() => setShowPaywall(true)}
@@ -224,11 +247,46 @@ export default function Home() {
         {/* SOL FORM */}
         <section className="bg-white rounded-xl p-6 shadow-sm border border-slate-200 overflow-y-auto max-h-[calc(100vh-120px)] space-y-8 print:hidden">
           
-          {/* Kişisel Bilgiler */}
+          {/* Kişisel Bilgiler & Fotoğraf */}
           <div>
             <h2 className="text-lg font-bold text-slate-800 mb-4 pb-2 border-b">
               Kişisel Bilgiler
             </h2>
+
+            {/* Profil Fotoğrafı Alanı */}
+            <div className="mb-6 p-4 border border-dashed border-slate-300 rounded-xl bg-slate-50 flex items-center gap-4">
+              {cvData.photo ? (
+                <div className="relative w-16 h-16 rounded-full overflow-hidden border-2 border-blue-600 shrink-0">
+                  <img src={cvData.photo} alt="Profil" className="w-full h-full object-cover" />
+                </div>
+              ) : (
+                <div className="w-16 h-16 rounded-full bg-slate-200 border-2 border-dashed border-slate-300 flex items-center justify-center text-slate-400 text-2xl shrink-0">
+                  📷
+                </div>
+              )}
+              <div className="flex-1">
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Profil Fotoğrafı Yükle
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handlePhotoUpload}
+                    className="block w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
+                  />
+                  {cvData.photo && (
+                    <button
+                      onClick={removePhoto}
+                      className="text-xs text-red-600 font-bold hover:underline shrink-0"
+                    >
+                      Kaldır
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+
             <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -425,16 +483,26 @@ export default function Home() {
           >
             <div>
               {/* Header */}
-              <div className="border-b-2 border-blue-600 pb-4 mb-6">
-                <h1 className="text-2xl font-bold text-slate-900 uppercase tracking-wide">
-                  {cvData.fullName || "Adınız Soyadınız"}
-                </h1>
-                <p className="text-blue-600 font-semibold text-md">{cvData.title || "Unvanınız"}</p>
-                
-                <div className="flex flex-wrap gap-4 text-xs text-slate-500 mt-3">
-                  {cvData.email && <span>📧 {cvData.email}</span>}
-                  {cvData.phone && <span>📞 {cvData.phone}</span>}
-                  {cvData.location && <span>📍 {cvData.location}</span>}
+              <div className="border-b-2 border-blue-600 pb-4 mb-6 flex items-start gap-5">
+                {/* Profil Resmi Var İse Göster */}
+                {cvData.photo && (
+                  <img
+                    src={cvData.photo}
+                    alt={cvData.fullName}
+                    className="w-24 h-24 rounded-full object-cover border-2 border-blue-600 shrink-0 shadow-sm"
+                  />
+                )}
+                <div className="flex-1">
+                  <h1 className="text-2xl font-bold text-slate-900 uppercase tracking-wide">
+                    {cvData.fullName || "Adınız Soyadınız"}
+                  </h1>
+                  <p className="text-blue-600 font-semibold text-md">{cvData.title || "Unvanınız"}</p>
+                  
+                  <div className="flex flex-wrap gap-4 text-xs text-slate-500 mt-3">
+                    {cvData.email && <span>📧 {cvData.email}</span>}
+                    {cvData.phone && <span>📞 {cvData.phone}</span>}
+                    {cvData.location && <span>📍 {cvData.location}</span>}
+                  </div>
                 </div>
               </div>
 
