@@ -415,12 +415,99 @@ export default function Home() {
     localStorage.setItem("cvData", JSON.stringify(updated));
   };
 
-  const handleDownloadPDF = () => {
+  const handleDownloadPDF = async () => {
+  const element = document.getElementById("printable-cv");
+
+  if (!element) {
+    alert("CV alanı bulunamadı. Sayfayı yenileyip tekrar deneyin.");
+    return;
+  }
+
+  try {
     setShowPaywall(false);
-    setTimeout(() => {
-      window.print();
-    }, 200);
-  };
+
+    // Fotoğrafların yüklenmesini bekle.
+    await Promise.all(
+      Array.from(element.querySelectorAll("img")).map((img) => {
+        if (img.complete) return Promise.resolve();
+
+        return new Promise<void>((resolve) => {
+          img.onload = () => resolve();
+          img.onerror = () => resolve();
+        });
+      })
+    );
+
+    const importedModule = await import("html2pdf.js");
+    const html2pdf = (importedModule as any).default ?? importedModule;
+
+    const safeName =
+      (cvData.fullName || "CV")
+        .normalize("NFKD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-zA-Z0-9_-]/g, "_")
+        .replace(/_+/g, "_")
+        .replace(/^_+|_+$/g, "") || "CV";
+
+    const options = {
+      margin: [10, 10, 12, 10],
+      filename: `${safeName}.pdf`,
+      image: {
+        type: "jpeg",
+        quality: 0.98,
+      },
+      html2canvas: {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: "#ffffff",
+        logging: false,
+        scrollX: 0,
+        scrollY: 0,
+      },
+      jsPDF: {
+        unit: "mm",
+        format: "a4",
+        orientation: "portrait",
+        compress: true,
+      },
+      pagebreak: {
+        mode: ["css", "legacy"],
+      },
+    };
+
+    const worker = html2pdf().set(options).from(element).toPdf();
+
+    await worker
+      .get("pdf")
+      .then((pdf: any) => {
+        const totalPages = pdf.internal.getNumberOfPages();
+
+        for (let page = 1; page <= totalPages; page++) {
+          pdf.setPage(page);
+
+          const pageWidth = pdf.internal.pageSize.getWidth();
+          const pageHeight = pdf.internal.pageSize.getHeight();
+
+          pdf.setFontSize(8);
+          pdf.setTextColor(120, 120, 120);
+
+          pdf.text("CVSablon.com", 10, pageHeight - 5);
+
+          pdf.text(
+            `${page} / ${totalPages}`,
+            pageWidth - 10,
+            pageHeight - 5,
+            { align: "right" }
+          );
+        }
+      });
+
+    await worker.save();
+  } catch (error) {
+    console.error("PDF oluşturulamadı:", error);
+    alert("PDF oluşturulurken bir hata oluştu. Lütfen tekrar deneyin.");
+  }
+};
 
   const SectionHeaderControls = ({ sectionId }: { sectionId: string }) => {
     const orders = cvData.sectionOrders;
