@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 
 interface CustomSectionItem {
   id: string;
@@ -140,6 +140,7 @@ const emptyData: CVData = {
 export default function Home() {
   const [cvData, setCvData] = useState<CVData>(sampleData);
   const [showPaywall, setShowPaywall] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const savedData = localStorage.getItem("cvData");
@@ -197,6 +198,38 @@ export default function Home() {
   const loadSampleData = () => {
     setCvData(sampleData);
     localStorage.setItem("cvData", JSON.stringify(sampleData));
+  };
+
+  // JSON YEDEKLEME / DİŞA AKTAR
+  const exportJSON = () => {
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(cvData, null, 2));
+    const downloadAnchor = document.createElement("a");
+    const fileName = `${(cvData.fullName || "CV").replace(/\s+/g, "_")}_yedek.json`;
+    downloadAnchor.setAttribute("href", dataStr);
+    downloadAnchor.setAttribute("download", fileName);
+    document.body.appendChild(downloadAnchor);
+    downloadAnchor.click();
+    downloadAnchor.remove();
+  };
+
+  // JSON YÜKLEME / İÇE AKTAR
+  const importJSON = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        try {
+          const parsed = JSON.parse(event.target?.result as string);
+          const updated = { ...sampleData, ...parsed };
+          setCvData(updated);
+          localStorage.setItem("cvData", JSON.stringify(updated));
+          alert("CV verileriniz başarıyla yüklendi! 🎉");
+        } catch (err) {
+          alert("Geçersiz yedek dosyası formatı!");
+        }
+      };
+      reader.readAsText(file);
+    }
   };
 
   const moveSection = (sectionId: string, direction: "up" | "down") => {
@@ -415,99 +448,12 @@ export default function Home() {
     localStorage.setItem("cvData", JSON.stringify(updated));
   };
 
-  const handleDownloadPDF = async () => {
-  const element = document.getElementById("printable-cv");
-
-  if (!element) {
-    alert("CV alanı bulunamadı. Sayfayı yenileyip tekrar deneyin.");
-    return;
-  }
-
-  try {
+  const handleDownloadPDF = () => {
     setShowPaywall(false);
-
-    // Fotoğrafların yüklenmesini bekle.
-    await Promise.all(
-      Array.from(element.querySelectorAll("img")).map((img) => {
-        if (img.complete) return Promise.resolve();
-
-        return new Promise<void>((resolve) => {
-          img.onload = () => resolve();
-          img.onerror = () => resolve();
-        });
-      })
-    );
-
-    const importedModule = await import("html2pdf.js");
-    const html2pdf = (importedModule as any).default ?? importedModule;
-
-    const safeName =
-      (cvData.fullName || "CV")
-        .normalize("NFKD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .replace(/[^a-zA-Z0-9_-]/g, "_")
-        .replace(/_+/g, "_")
-        .replace(/^_+|_+$/g, "") || "CV";
-
-    const options = {
-      margin: [10, 10, 12, 10],
-      filename: `${safeName}.pdf`,
-      image: {
-        type: "jpeg",
-        quality: 0.98,
-      },
-      html2canvas: {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: "#ffffff",
-        logging: false,
-        scrollX: 0,
-        scrollY: 0,
-      },
-      jsPDF: {
-        unit: "mm",
-        format: "a4",
-        orientation: "portrait",
-        compress: true,
-      },
-      pagebreak: {
-        mode: ["css", "legacy"],
-      },
-    };
-
-    const worker = html2pdf().set(options).from(element).toPdf();
-
-    await worker
-      .get("pdf")
-      .then((pdf: any) => {
-        const totalPages = pdf.internal.getNumberOfPages();
-
-        for (let page = 1; page <= totalPages; page++) {
-          pdf.setPage(page);
-
-          const pageWidth = pdf.internal.pageSize.getWidth();
-          const pageHeight = pdf.internal.pageSize.getHeight();
-
-          pdf.setFontSize(8);
-          pdf.setTextColor(120, 120, 120);
-
-          pdf.text("CVSablon.com", 10, pageHeight - 5);
-
-          pdf.text(
-            `${page} / ${totalPages}`,
-            pageWidth - 10,
-            pageHeight - 5,
-            { align: "right" }
-          );
-        }
-      });
-
-    await worker.save();
-  } catch (error) {
-    console.error("PDF oluşturulamadı:", error);
-    alert("PDF oluşturulurken bir hata oluştu. Lütfen tekrar deneyin.");
-  }
-};
+    setTimeout(() => {
+      window.print();
+    }, 200);
+  };
 
   const SectionHeaderControls = ({ sectionId }: { sectionId: string }) => {
     const orders = cvData.sectionOrders;
@@ -1018,15 +964,43 @@ export default function Home() {
             className="h-12 md:h-16 w-auto object-contain"
           />
         </div>
-        <button
-          onClick={() => setShowPaywall(true)}
-          className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2.5 rounded-xl shadow-md transition-all flex items-center gap-2 text-sm"
-        >
-          <span>CV'yi İndir</span>
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-          </svg>
-        </button>
+
+        <div className="flex items-center gap-3">
+          {/* YEDEK DOSYASI İNDİR / YÜKLE */}
+          <button
+            onClick={exportJSON}
+            className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-3.5 py-2 rounded-xl text-xs transition-all flex items-center gap-1.5 border border-slate-300"
+            title="CV verilerinizi bilgisayarınıza .json olarak indirir"
+          >
+            <span>💾 Yedekle (.json)</span>
+          </button>
+
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-3.5 py-2 rounded-xl text-xs transition-all flex items-center gap-1.5 border border-slate-300"
+            title="Daha önce indirdiğiniz .json yedek dosyasını yükler"
+          >
+            <span>📂 CV Yükle</span>
+          </button>
+
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={importJSON}
+            accept=".json"
+            className="hidden"
+          />
+
+          <button
+            onClick={() => setShowPaywall(true)}
+            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2.5 rounded-xl shadow-md transition-all flex items-center gap-2 text-sm"
+          >
+            <span>CV'yi İndir</span>
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+          </button>
+        </div>
       </header>
 
       {/* Main Grid */}
@@ -1133,357 +1107,3 @@ export default function Home() {
             {/* Profil Fotoğrafı Alanı */}
             <div className="p-3 border border-dashed border-slate-300 rounded-xl bg-white space-y-3">
               <div className="flex items-center gap-4">
-                {cvData.photo ? (
-                  <div className="relative w-16 h-16 rounded-full overflow-hidden border-2 shrink-0 bg-slate-200" style={{ borderColor: cvData.accentColor }}>
-                    <img
-                      src={cvData.photo}
-                      alt="Profil"
-                      className="w-full h-full object-cover"
-                      style={{
-                        objectPosition: `${cvData.photoX}% ${cvData.photoY}%`,
-                        transform: `scale(${cvData.photoZoom / 100})`,
-                      }}
-                    />
-                  </div>
-                ) : (
-                  <div className="w-16 h-16 rounded-full bg-slate-200 border-2 border-dashed border-slate-300 flex items-center justify-center text-slate-400 text-xl shrink-0">
-                    📷
-                  </div>
-                )}
-                <div className="flex-1">
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Profil Fotoğrafı Yükle
-                  </label>
-                  <div className="flex gap-2">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handlePhotoUpload}
-                      className="block w-full text-xs text-slate-500 file:mr-3 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
-                    />
-                    {cvData.photo && (
-                      <button
-                        onClick={removePhoto}
-                        className="text-xs text-red-600 font-bold hover:underline shrink-0"
-                      >
-                        Kaldır
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Fotoğraf Hizalama Çubukları */}
-              {cvData.photo && (
-                <div className="pt-2 border-t border-slate-200 grid grid-cols-1 md:grid-cols-3 gap-3">
-                  <div>
-                    <div className="flex justify-between text-[10px] font-semibold text-slate-600 mb-1">
-                      <span>Dikey Odak</span>
-                      <span>%{cvData.photoY}</span>
-                    </div>
-                    <input
-                      type="range"
-                      min="0"
-                      max="100"
-                      value={cvData.photoY}
-                      onChange={(e) => handlePhotoAdjust("photoY", Number(e.target.value))}
-                      className="w-full h-1 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
-                    />
-                  </div>
-
-                  <div>
-                    <div className="flex justify-between text-[10px] font-semibold text-slate-600 mb-1">
-                      <span>Yatay Odak</span>
-                      <span>%{cvData.photoX}</span>
-                    </div>
-                    <input
-                      type="range"
-                      min="0"
-                      max="100"
-                      value={cvData.photoX}
-                      onChange={(e) => handlePhotoAdjust("photoX", Number(e.target.value))}
-                      className="w-full h-1 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
-                    />
-                  </div>
-
-                  <div>
-                    <div className="flex justify-between text-[10px] font-semibold text-slate-600 mb-1">
-                      <span>Boyut (Zoom)</span>
-                      <span>%{cvData.photoZoom}</span>
-                    </div>
-                    <input
-                      type="range"
-                      min="50"
-                      max="200"
-                      value={cvData.photoZoom}
-                      onChange={(e) => handlePhotoAdjust("photoZoom", Number(e.target.value))}
-                      className="w-full h-1 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
-                    />
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="space-y-3">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-600 mb-1">Ad Soyad</label>
-                  <input
-                    type="text"
-                    name="fullName"
-                    value={cvData.fullName}
-                    onChange={handleChange}
-                    placeholder="Adınız Soyadınız"
-                    className="w-full border border-slate-300 p-2 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-600 mb-1">Unvan</label>
-                  <input
-                    type="text"
-                    name="title"
-                    value={cvData.title}
-                    onChange={handleChange}
-                    placeholder="Mesleki Unvanınız"
-                    className="w-full border border-slate-300 p-2 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-600 mb-1">E-posta</label>
-                  <input
-                    type="email"
-                    name="email"
-                    value={cvData.email}
-                    onChange={handleChange}
-                    placeholder="eposta@ornek.com"
-                    className="w-full border border-slate-300 p-2 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-600 mb-1">Telefon</label>
-                  <input
-                    type="text"
-                    name="phone"
-                    value={cvData.phone}
-                    onChange={handleChange}
-                    placeholder="+90 5XX XXX XX XX"
-                    className="w-full border border-slate-300 p-2 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-600 mb-1">Konum</label>
-                  <input
-                    type="text"
-                    name="location"
-                    value={cvData.location}
-                    onChange={handleChange}
-                    placeholder="Şehir, Ülke"
-                    className="w-full border border-slate-300 p-2 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* DİNAMİK SIRALAMAYA GÖRE SENKRONİZE FORM BÖLÜMLERİ */}
-          {cvData.sectionOrders.map((order) => renderFormSection(order))}
-
-          {/* YENİ ÖZEL BÖLÜM EKLE BUTONU */}
-          <div className="pt-2">
-            <button
-              onClick={addCustomSection}
-              className="w-full py-3 border-2 border-dashed border-blue-400 bg-blue-50/50 hover:bg-blue-100/50 text-blue-700 font-bold rounded-xl transition-all flex items-center justify-center gap-2 text-sm shadow-sm"
-            >
-              <span>+ Yeni Özel Bölüm Ekle (Sertifika, Yabancı Dil, Projeler)</span>
-            </button>
-          </div>
-
-        </section>
-
-        {/* SAĞ CANLI ÖNİZLEME */}
-        <section className="bg-slate-200 rounded-xl p-6 shadow-inner flex justify-center items-start overflow-y-auto max-h-[calc(100vh-120px)] print:bg-white print:p-0 print:max-h-none">
-          <div
-            id="printable-cv"
-            className="bg-white w-full max-w-[595px] min-h-[842px] shadow-xl rounded-sm flex flex-col justify-between text-slate-900 relative overflow-hidden"
-          >
-            {/* 1️⃣ KLASİK MİNİMAL ŞABLON DÜZENİ */}
-            {cvData.template === "classic" && (
-              <div className="p-8 flex-1 flex flex-col justify-between">
-                <div>
-                  <div
-                    className="pb-4 mb-6 flex items-start gap-5 border-b-2"
-                    style={{ borderColor: cvData.accentColor }}
-                  >
-                    {cvData.photo && (
-                      <div
-                        className="w-24 h-24 rounded-full overflow-hidden border-2 shrink-0 shadow-sm bg-slate-100 relative"
-                        style={{ borderColor: cvData.accentColor }}
-                      >
-                        <img
-                          src={cvData.photo}
-                          alt={cvData.fullName}
-                          className="w-full h-full object-cover"
-                          style={{
-                            objectPosition: `${cvData.photoX}% ${cvData.photoY}%`,
-                            transform: `scale(${cvData.photoZoom / 100})`,
-                          }}
-                        />
-                      </div>
-                    )}
-                    <div className="flex-1">
-                      <h1 className="text-2xl font-black text-slate-950 uppercase tracking-wide">
-                        {cvData.fullName || "Adınız Soyadınız"}
-                      </h1>
-                      <p
-                        className="font-extrabold text-md"
-                        style={{ color: cvData.accentColor }}
-                      >
-                        {cvData.title || "Unvanınız"}
-                      </p>
-                      
-                      <div className="flex flex-wrap gap-4 text-xs font-semibold text-slate-700 mt-3">
-                        {cvData.email && <span>📧 {cvData.email}</span>}
-                        {cvData.phone && <span>📞 {cvData.phone}</span>}
-                        {cvData.location && <span>📍 {cvData.location}</span>}
-                      </div>
-                    </div>
-                  </div>
-
-                  {cvData.sectionOrders.map((order) => renderCVSection(order))}
-                </div>
-
-                <div className="border-t pt-3 text-center text-[10px] text-slate-500 font-semibold flex justify-between items-center">
-                  <span>Hazırlayan: CVSablon.com</span>
-                  <span>Sayfa 1 / 1</span>
-                </div>
-              </div>
-            )}
-
-            {/* 2️⃣ MODERN 2-KOLONLU ŞABLON DÜZENİ */}
-            {cvData.template === "modern" && (
-              <div className="flex-1 flex min-h-[842px]">
-                {/* SOL RENKLİ SÜTUN */}
-                <div
-                  className="w-2/5 p-6 text-white flex flex-col justify-between shrink-0"
-                  style={{ backgroundColor: cvData.accentColor }}
-                >
-                  <div>
-                    {cvData.photo && (
-                      <div className="w-28 h-28 rounded-full overflow-hidden border-4 border-white/80 shadow-md bg-white/20 mx-auto mb-5 relative">
-                        <img
-                          src={cvData.photo}
-                          alt={cvData.fullName}
-                          className="w-full h-full object-cover"
-                          style={{
-                            objectPosition: `${cvData.photoX}% ${cvData.photoY}%`,
-                            transform: `scale(${cvData.photoZoom / 100})`,
-                          }}
-                        />
-                      </div>
-                    )}
-
-                    <div className="text-center mb-6">
-                      <h1 className="text-xl font-black uppercase tracking-wide text-white">
-                        {cvData.fullName || "Adınız Soyadınız"}
-                      </h1>
-                      <p className="text-xs font-bold text-white/90 mt-1 uppercase tracking-wider">
-                        {cvData.title || "Unvanınız"}
-                      </p>
-                    </div>
-
-                    <div className="border-t border-white/20 pt-4 mb-6 space-y-2.5 text-xs font-medium text-white/90">
-                      {cvData.email && <div className="break-all">📧 {cvData.email}</div>}
-                      {cvData.phone && <div>📞 {cvData.phone}</div>}
-                      {cvData.location && <div>📍 {cvData.location}</div>}
-                    </div>
-
-                    {/* SOL SÜTUNA DİNAMİK YERLEŞEN BÖLÜMLER */}
-                    <div className="space-y-4 pt-2 border-t border-white/20">
-                      {modernLeftOrders.map((order) => renderCVSection(order, true))}
-                    </div>
-                  </div>
-
-                  <div className="text-[9px] text-white/60 pt-4 border-t border-white/20 text-center">
-                    CVSablon.com
-                  </div>
-                </div>
-
-                {/* SAĞ BEYAZ İÇERİK SÜTÜNU */}
-                <div className="w-3/5 p-6 flex flex-col justify-between bg-white">
-                  <div>
-                    {modernRightOrders.map((order) => renderCVSection(order, false))}
-                  </div>
-
-                  <div className="border-t pt-2 text-right text-[9px] text-slate-400 font-semibold">
-                    Sayfa 1 / 1
-                  </div>
-                </div>
-              </div>
-            )}
-
-          </div>
-        </section>
-
-      </main>
-
-      {/* İndirme Modal */}
-      {showPaywall && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 print:hidden">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl relative">
-            <button
-              onClick={() => setShowPaywall(false)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 font-bold text-xl"
-            >
-              ✕
-            </button>
-            <h3 className="text-xl font-bold text-slate-900 mb-2">CV'nizi İndirin</h3>
-            <p className="text-slate-600 text-sm mb-6">
-              İhtiyacınıza uygun indirme seçeneğini belirleyin:
-            </p>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Ücretsiz */}
-              <div className="border border-slate-200 rounded-xl p-4 flex flex-col justify-between hover:border-slate-300 transition-all">
-                <div>
-                  <span className="bg-slate-100 text-slate-700 text-xs font-bold px-2 py-1 rounded">Ücretsiz</span>
-                  <h4 className="font-bold text-slate-800 mt-2">Logolu PDF</h4>
-                  <p className="text-xs text-slate-500 mt-1">Alt kısımda cvsablon.com filigranı yer alır.</p>
-                </div>
-                <button
-                  onClick={handleDownloadPDF}
-                  className="mt-4 w-full bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold py-2 rounded-lg text-sm transition-all"
-                >
-                  Ücretsiz İndir (PDF Kaydet)
-                </button>
-              </div>
-
-              {/* Pro */}
-              <div className="border-2 border-blue-600 rounded-xl p-4 flex flex-col justify-between bg-blue-50/30 relative overflow-hidden">
-                <span className="absolute -right-7 top-3 bg-blue-600 text-white text-[10px] font-bold py-0.5 px-8 rotate-45">
-                  ÖNERİLEN
-                </span>
-                <div>
-                  <span className="bg-blue-600 text-white text-xs font-bold px-2 py-1 rounded">Pro</span>
-                  <h4 className="font-bold text-slate-900 mt-2">Temiz PDF (Logosuz)</h4>
-                  <p className="text-xs text-slate-600 mt-1">Sıfır filigran, yüksek kalite baskı formatı.</p>
-                </div>
-                <button
-                  onClick={() => {
-                    alert("iyzico / PayTR Ödeme Sayfasına yönlendiriliyorsunuz (29.90 TL)...");
-                    handleDownloadPDF();
-                  }}
-                  className="mt-4 w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg text-sm shadow-md transition-all"
-                >
-                  29.90 TL ile İndir
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
